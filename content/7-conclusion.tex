@@ -1,0 +1,13 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+In summary, the integration of ESKF and LOST with assuming known GPS coordinates in the triangulation method can be regarded as a success. However, further advancements are necessary to ensure its practical viability in real-world scenarios. These enhancements encompass the following:
+\begin{enumerate}
+    \item Creating a useful cross-covariance estimator method and integrating it into the filter framework.
+    \item The integration of genuine image processing algorithms into the ESKF framework, leading to:
+    \begin{enumerate}
+        \item The incorporation of camera imperfections, such as lens distortion errors into the simulation.
+        \item The enhancement of the measurement update process to rely not solely on a single camera image but also on track information pertaining to feature points.
+    \end{enumerate}
+    \item The development of a back-end component for the filter.
+\end{enumerate}

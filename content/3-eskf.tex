@@ -1,0 +1,471 @@
+\chapter{Introduction of the applied filter technique}
+\label{chap:eskf}
+
+Upon laying down essential mathematical foundations, the subsequent focus shifts toward introducing the chosen filter technique. In visual-inertial projects, various approaches are available to filter measurements and estimate the system's state. Many of these approaches are a modified Kalman filter. The basics of the implemented filter are based on the ESKF, which stands as a remarkable method for filtering and estimating nonlinear systems. The basic algorithm is taken from \cite{quaternion-eskf}, but with three major differences:
+\begin{enumerate}
+    \item 
+    I didn't insert the gravitational constant ($\mathbf{g}$)  in the state vectors $\mathbf{x}$, $\delta\mathbf{x}$ to estimate because UAVs usually fly small distances and the gravitational acceleration can be assumed constant.
+    
+    \item
+    The velocity vector $\mathbf{v}$ is body-fixed in my approach, making it $\mathbf{v}_b$. On the contrary, the mentioned literature uses an inertial frame fixed velocity vector.
+    
+    \item 
+    In their method, the rotation described by quaternion $\mathbf{q}$ and rotation matrix $\mathbf{R}\{\mathbf{q}\}\equiv\mathbf{R}$ \footnote{In this paper, $\mathbf{R}\{\mathbf{q}\}$ detones the rotation matrix obtained from quaternion.} stands for the body-to-earth rotation, while in this paper rotation stands for the inverse transformation, earth-to-body transformation to match the conventional Euler angle representation of rotation commonly applied in aerospace. This impacts the formulation of the mathematical equations, but in most cases, the equations have symmetrical properties.
+\end{enumerate}
+
+\section{In general about the Kalman filter}
+
+ The Kalman filter is a recursive algorithm used for state estimation in a time-varying linear system. It combines information from past measurements and predictions of the system's state to produce an optimal estimate of the current state. It does this by incorporating a weighted average of the predicted state and the new measurement, where the weights are calculated optimally considering the uncertainty in the state and measurements.
+
+The different types of Kalman filters have the same property in that they involve a prediction and an update step. The prediction step propagates the state through time according to the system's dynamics and it's also called a priori information. The update step involves measurements which is a posteriori information obtained from the real-world system. The Kalman filter gives an optimal solution in recursive form, therefore the new estimation is calculated as a composition of the propagated state and residual. The residual carries the new information defined as the difference between the measurement and the propagated state. To sum up, Kalman filters provide an optimal solution to a linear system by combining the a priori and a posteriori information. If Kalman filters are applied to non-linear systems, then the system dynamics and measurement models have to be linearized \cite{discrete_kalman_tutorial}.
+
+
+\section{Error-state kinematics}
+
+In IMU-driven systems the goal is to create a filter framework, that integrates the accelerometer and gyrometer readings considering their bias and measurement noise. As I previously detailed the IMU measurements only themselves cause drift in their estimate, therefore they should be fused with absolute position readings such as GPS or vision.
+
+The ESKF defines an ideal state called a nominal state and applies an error-state relative to that. During the state propagation, the system is propagated based on the ideal non-linear system dynamics and accounts for the evolution of the error state. The assumption is that the error state always operates close to the actual system state, thus it has several advantages:
+\begin{itemize}
+    \item 
+     Since the error state remains small the linear Kalman filter approach is a better estimation for the error state.
+
+    \item
+    All second-order products are negligible because the error state remains small. This makes the computation of Jacobians very easy and fast. 
+
+    \item 
+    The dynamics of the error state are small and slow, due to all large-signal dynamics being integrated into the nominal dynamics. This results in a highly beneficial property: the KF corrections can be applied at a lower rate, than the predictions.
+\end{itemize}
+
+\subsection{Kalman filter states for IMU driven systems}
+
+The objective is to estimate the position of the aircraft, which requires to use of the kinematic equations of the aircraft. The kinematics expresses the relationships among position, orientation, velocity, acceleration, and angular velocity. Whereas acceleration ($\mathbf{a}_m$) and angular velocity ($\boldsymbol{\omega}_m$) are utilized as IMU measurements, the position ($\mathbf{p}_n^b$), velocity ($\mathbf{v}_b$), and orientation ($\mathbf{q}_{NB}$) are included in the state. Moreover, the state is supplemented by estimating the biases of the sensors ($\boldsymbol{\beta}_a$, $\boldsymbol{\beta}_\omega$). 
+
+The mentioned quantities are expressed respectively to the body or inertial frame. I did not explicitly mark that measurements are also captured concerning the body frame because it is unambiguous in the case of strap-down IMUs. In the context of ESKF, I use $\mathbf{p}$ and $\mathbf{q}$ lighter notations for accounting for the relation between the body and the inertial frame. This results in the state vector:
+\begin{equation}
+    \mathbf{x}=\begin{bmatrix}
+    \mathbf{p} \\ \mathbf{q} \\ \mathbf{v}_b \\ \boldsymbol{\beta}_a \\ \boldsymbol{\beta}_\omega
+    \end{bmatrix}
+\end{equation}
+
+\subsection{ESKF states}
+
+In the ESKF framework, three different states are defined: true ($\mathbf{x}_t$), nominal ($\mathbf{x}$), and error state ($\delta\mathbf{x}$). All of the ESKF variables are summarized in Table \ref{tab:eskf-states}.
+
+\begin{longtable}{c | c | c | c | c | c}
+    True & Nominal & Error & Composition & Noise & Measured\\ 
+    \hline
+     $\mathbf{p}_{t}$ & $\mathbf{p}$ & $\delta\mathbf{p}$ & 
+     $\mathbf{p}_{t}=\mathbf{p}+\delta\mathbf{p}$ & &\\
+     $\mathbf{q}_{t}$ & $\mathbf{q}$ & $\delta\mathbf{q}\approx
+     \begin{bmatrix}
+        1 \\ \frac{1}{2}\delta\boldsymbol{\theta}
+     \end{bmatrix}$ &
+     $\mathbf{q}_{t}=\delta\mathbf{q}\otimes\mathbf{q}$ & &\\
+     $\mathbf{v}_{b, t}$ & $\mathbf{v}_b$ & $\delta\mathbf{v}_b$ &
+     $\mathbf{v}_{b, t}=\mathbf{v}_b+\delta\mathbf{v}_b$ & &\\
+     $\boldsymbol{\beta}_{a,t}$ & $\boldsymbol{\beta}_{a}$ & $\delta\boldsymbol{\beta}_{a}$ &
+     $\boldsymbol{\beta}_{a,t}=\boldsymbol{\beta}_{a}+\delta\boldsymbol{\beta}_{a}$ & $\boldsymbol{\eta}_{\beta_a}$ &\\
+     $\boldsymbol{\beta}_{\omega,t}$ & $\boldsymbol{\beta}_{\omega}$ & $\delta\boldsymbol{\beta}_{\omega}$ & $\boldsymbol{\beta}_{\omega,t}=\boldsymbol{\beta}_{\omega}+ \delta\boldsymbol{\beta}_{\omega}$ & $\boldsymbol{\eta_{\beta_\omega}}$ &\\ 
+     \hline
+     $\mathbf{R}_t$ & $\mathbf{R}$ & $\delta\mathbf{R}=e^{\begin{bmatrix}
+         \delta\boldsymbol{\theta}
+     \end{bmatrix}_\times}$ &  $\mathbf{R}_t=\delta\mathbf{R}\mathbf{R}$ & & \\
+     $\mathbf{a}_t$ & $\mathbf{a}$ & $\delta\mathbf{a}$ & $\mathbf{a}+\delta\mathbf{a}$ & $\boldsymbol{\eta_{a}}$ & $\mathbf{a}_m$\\
+     $\boldsymbol{\omega}_t$ & $\boldsymbol{\omega}$ & $\delta\boldsymbol{\omega}$ & $\boldsymbol{\omega}$ + $\delta\boldsymbol{\omega}$ & $\boldsymbol{\eta_\omega}$ & $\boldsymbol{\omega}_m$\\
+    \caption{ESKF states and inputs}
+    \label{tab:eskf-states}
+\end{longtable}
+
+The states are divided in such a way that the large-signal dynamics are integrated into the nominal state for example state and biases, while the small and slowly varying effects are assigned to the error state for instance measurement noise or bias varying. A few comments on the table:
+\begin{itemize}
+    \item 
+    All quantity yields a simple sum operation on nominal and error state to get the true state except the orientation.
+    \item
+    In the nominal state, orientation is described using quaternion ($\mathbf{q}$). However, the error in the rotation is described with a rotation vector ($\delta\boldsymbol{\theta}$) that represents a small deviation or error from a reference rotation. The relation was presented between the quaternion and rotation vector in Appendix \ref{app:rotvec2quat}. Utilizing the assumption that $\delta\boldsymbol{\theta}$ is always small its cosine and sine can be approximated as $\cos\left(\frac{\theta}{2}\right)=1$ and $\sin\left(\frac{\theta}{2}\right)=\frac{\theta}{2}$ and this yields the formula in Table \ref{tab:eskf-states}.
+    
+    \item 
+    The body-referenced measurements are $\mathbf{a}_m$ and $\boldsymbol{\omega}_m$ and they are captured as noisy IMU measurements. The noise impulses $\boldsymbol{\eta}_q$ and $\boldsymbol{\eta}_\omega$ are modeled with white Gaussian distribution. It is worth mentioning that non-g-compensated accelerometers measure gravitational acceleration therefore it has to be considered in the equations, thus:  
+    \begin{equation}
+    \begin{aligned}
+        \mathbf{a}_m&=\mathbf{a}_t-\mathbf{R}_t\mathbf{g}+\boldsymbol{\beta}_{a,t}+\boldsymbol{\eta}_a \\
+        \boldsymbol{\omega}_m&=\boldsymbol{\omega}_t+\boldsymbol{\beta}_{\omega, t}+\boldsymbol{\eta}_\omega
+    \end{aligned}
+    \label{eq:measured-IMU}
+    \end{equation}
+    Substituting the true state models from Table \ref{tab:eskf-states} in \eqref{eq:measured-IMU}, the true value of the acceleration and angular rate can be expressed:
+    \begin{equation}
+    \begin{aligned}
+        \mathbf{a}_t&=\overbrace{\mathbf{a}_m-\boldsymbol{\beta}_a}^\mathbf{a}+ \mathbf{Rg} \overbrace{-\delta\boldsymbol{\beta}_a-\boldsymbol{\eta}_a}^{\delta\mathbf{a}} \\
+        \boldsymbol{\omega}_t&=\overbrace{\boldsymbol{\omega}_m-\boldsymbol{\beta}_\omega}^{\boldsymbol{\omega}}\overbrace{-\delta\boldsymbol{\beta}_\omega-\boldsymbol{\eta}_\omega}^{\delta\boldsymbol{\omega}}
+    \end{aligned}
+    \label{eq:true-IMU}
+    \end{equation}
+    In \eqref{eq:true-IMU} the error part of the biases $\delta\boldsymbol{\beta}_a$ and $\delta\boldsymbol{\beta}_\omega$ account for slowly varying biases over time since these parameters are typically temperature-dependent. It is also represented with Gaussian white noises.
+
+    \item 
+    In the context of 3-D rotations, the unit quaternions and rotation matrices belong to the SO(3)\footnote{Special Orthogonal} group. The skew-symmetric matrix of rotation vector $\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times$ is part of the $\mathfrak{so}(3)$ Lie Algebra and in \cite{quaternion-eskf} they propose that the exponential map is a powerful mathematical tool to map it into $\mathrm{SO}(3)$ space, therefore the error rotation matrix $\delta\mathbf{R}$ can be expressed with the rotation vector as in Table \ref{tab:eskf-states}. The value of $\mathbf{R}_t$ can be determined by expanding $\delta\mathbf{R}$ into Taylor series, neglecting the second- and higher-order terms, it yields:
+    \begin{equation}
+         \mathbf{R}_t=\delta\mathbf{R}\mathbf{R}=\left(\mathbf{I} +\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times\right) \mathbf{R} + \mathcal{O}(||\delta\boldsymbol{\theta}||^2),
+    \label{eq:true-rot}
+    \end{equation}    
+    where $\mathcal{O}(||\delta\boldsymbol{\theta}||^2)$ stands for the negligable terms. The calculations related to \eqref{eq:true-rot} are detailed in Appendix \ref{app:der-true-rot}.
+\end{itemize} 
+
+
+\subsection*{True-state}
+
+The dynamics of the true state can be described by the following equations:
+
+\begin{subequations}
+    \begin{align}
+        \dot{\mathbf{p}}_{t}&=\mathbf{R}_t^T \mathbf{v}_{b,t} \\
+        \dot{\mathbf{q}}_{t}&=\frac{1}{2}\begin{bmatrix}0\\ -(\boldsymbol{\omega}_m-\boldsymbol{\beta}_{\omega, t}-\boldsymbol{\eta}_{\omega}) \end{bmatrix}\otimes \mathbf{q}_{t} \label{subeq:true-q} \\
+        \dot{\mathbf{v}}_{b,t}&=\mathbf{a}_m-\boldsymbol{\beta}_{a,t}-\boldsymbol{\eta}_a +\mathbf{R}_t\mathbf{g} + \begin{bmatrix}\mathbf{v}_{b,t} \end{bmatrix}_{\times}(\boldsymbol{\omega}_m-\boldsymbol{\beta}_{\omega,t} -\boldsymbol{\eta}_\omega) \label{subeq:true-vb}\\
+        \dot{\boldsymbol{\beta}}_{a,t}&=\boldsymbol{\eta}_{\beta_a} \label{subeq:true-ba}\\
+        \dot{\boldsymbol{\beta}}_{\omega,t}&=\boldsymbol{\eta}_{\beta_\omega} \label{subeq:true-bw}
+    \end{align}
+    \label{eq:true-state}
+\end{subequations}
+
+
+\eqref{subeq:true-q} is the time derivative formula of quaternion, and detailed in Appendix \ref{app:time-der-of-quat}. \eqref{subeq:true-vb} also requires some explanation because this equation applies the rule of vector derivative in rotating frames compared to an inertial frame:
+\begin{equation}
+    \frac{d}{dt_i}\mathbf{v}=\frac{d}{dt_b}\mathbf{v}+\boldsymbol{\omega}_{b/i}\times\mathbf{v}\Rightarrow\frac{d}{dt_b}\mathbf{v}=\frac{d}{dt_i}\mathbf{v}+\mathbf{v}\times\boldsymbol{\omega}_{b/i},
+\end{equation}
+
+where the anti-commutative property of the cross product was used ($\boldsymbol{\omega}_{b/i}\times\mathbf{v}=-\mathbf{v}\times\boldsymbol{\omega}_{b/i}$). In \eqref{subeq:true-vb}, the cross product is expressed in matrix form with the skew operator $\begin{bmatrix}. \end{bmatrix}_{\times}$, which can be constructed as:
+\begin{equation}
+    \begin{bmatrix}\mathbf{a} \end{bmatrix}_{\times}\triangleq\begin{bmatrix}
+        0 & -a_z & a_y \\
+        a_z & 0 & -a_x \\
+        -a_y & a_x & 0
+    \end{bmatrix}
+\end{equation}
+
+\subsection*{Nominal-state}
+
+The nominal state corresponds to the modeled system without noises and perturbations:
+ \begin{subequations}
+    \begin{align}
+        \dot{\mathbf{p}} &= \mathbf{R}^T\mathbf{v}_{b} \\
+        \dot{\mathbf{q}} &= \frac{1}{2}\begin{bmatrix}0\\ -\boldsymbol{\omega}\end{bmatrix} \otimes \mathbf{q} \\
+        \dot{\mathbf{v}}_{b}&=\mathbf{a}+\mathbf{R}\mathbf{g} + \begin{bmatrix}\mathbf{v}_{b} \end{bmatrix}_{\times}\boldsymbol{\omega} \label{subeq:nom-vb}\\
+        \dot{\boldsymbol{\beta}}_{a,t}&=0 \label{subeq:nom-ba}\\
+        \dot{\boldsymbol{\beta}}_{\omega,t}&=0 \label{subeq:nom-bw}
+    \end{align}
+    \label{eq:nominal-state}
+\end{subequations}
+
+It results in constant biases in the nominal state.
+
+\subsection*{Error-state}
+
+The error-state equations are derived by using the previously defined true- and nominal-state equations. The equations governing the error state are as follows:
+
+\begin{subequations}
+\begin{align}
+    \dot{\delta \mathbf{p}}&=\mathbf{R}^T \begin{bmatrix}\mathbf{v}_b\end{bmatrix}_\times\delta\boldsymbol{\theta} + \mathbf{R}^T\delta \mathbf{v}_b \\
+    \dot{\delta\boldsymbol{\theta}} &=-\begin{bmatrix}\boldsymbol{\omega}_m + \boldsymbol{\beta}_\omega\end{bmatrix}_\times\delta\boldsymbol{\theta} + \delta\boldsymbol{\beta}_\omega + \boldsymbol{\eta}_{\omega} \\
+    \begin{split}
+    \delta \dot{\mathbf{v}_b}&=-\begin{bmatrix}\mathbf{R}\mathbf{g}\end{bmatrix}_\times\delta\boldsymbol{\theta} -\begin{bmatrix}\boldsymbol{\omega}_m-\boldsymbol{\beta}_\omega\end{bmatrix}_\times\delta \mathbf{v}_b 
+    -\delta\boldsymbol{\beta}_a-\begin{bmatrix}\mathbf{v}_b \end{bmatrix}_\times\delta\boldsymbol{\beta}_\omega \\ &
+    -\boldsymbol{\eta}_{a}-\begin{bmatrix}\mathbf{v}_b \end{bmatrix}_\times\boldsymbol{\eta}_{\omega}
+    \end{split} \\
+    \delta\dot{\boldsymbol{\beta}_a}&=\boldsymbol{\eta}_{\beta_a} \\
+    \delta\dot{\boldsymbol{\beta}_\omega}&=\boldsymbol{\eta}_{\beta_\omega}
+\end{align}
+\label{eq:error-state}
+\end{subequations}
+
+The calculations are detailed in Appendix \ref{app:eskf-eqs}.
+
+\subsection{Error-state kinematics in discrete time}
+
+The previous equations are defined in continuous-time, but computer implementations use a discrete-time model. To incorporate discrete time intervals $\Delta t>0$, the differential equations \eqref{eq:error-state} must be transformed into difference equations through integration. 
+
+The integration method may vary, since in certain cases, exact closed-form solutions can be utilized, while in other cases, numerical integration techniques with varying degrees of accuracy may be employed. Generally, we could say the equations have a deterministic part related to state dynamics and control, on the other hand, there is a stochastic part related to perturbations and noises. In this case, the same method will be presented as in \cite{quaternion-eskf}: the deterministic part integrated normally, and the stochastic part modeled as random impulses. This results in the nominal state equations:
+\begin{subequations}
+\begin{align}
+    \mathbf{p}_{k+1}&=\mathbf{p}_{k}+\mathbf{R}^T\mathbf{v}_{b,k}\Delta t + 
+    \frac{1}{2}\mathbf{R}^T\left(\mathbf{a}_k+\mathbf{R}\mathbf{g} + \begin{bmatrix}\mathbf{v}_{b,k}\end{bmatrix}_{\times}\boldsymbol{\omega}_k\right)\Delta t^2   \\
+    \mathbf{q}_{k+1}&=\mathbf{q}\{-(\boldsymbol{\omega}_k-\boldsymbol{\beta}_\omega)\Delta t\} \otimes \mathbf{q}_{k} \\
+    \mathbf{v}_{b,k+1}&=\mathbf{v}_{b,k}+\left(\mathbf{a}_k+\mathbf{R}\mathbf{g} +\begin{bmatrix}\mathbf{v}_{b,k}\end{bmatrix}_{\times}\boldsymbol{\omega}_k\right)\Delta t \\
+    \boldsymbol{\beta}_{a,k+1}&=\boldsymbol{\beta}_{a,k} \\
+    \boldsymbol{\beta}_{\omega, k+1}&=\boldsymbol{\beta}_{\omega,k}
+\end{align}
+\label{eq:nom-eq-discrete}
+\end{subequations}
+
+The position is integrated both from velocity and acceleration, and the rotation from angular velocity. Using the same integration approach complemented by the integration of the stochastic part, the error state equations result in:
+\begin{subequations}
+\begin{align}
+    \delta\mathbf{p}_{k+1}&=\delta\mathbf{p}_{k}+ \mathbf{R}^T\left(\delta \mathbf{v}_{b,k} + \begin{bmatrix} \mathbf{v}_{b,k} \end{bmatrix}_\times \delta\boldsymbol{\theta}_k\right)\Delta t \\
+    \delta\boldsymbol{\theta}_{k+1}&=
+    \mathbf{R}\{-(\boldsymbol{\omega}_{m,k}-\boldsymbol{\beta}_{\omega,k})\Delta t\}\delta\boldsymbol{\theta}_k +\delta\boldsymbol{\beta}_{\omega,k}\Delta t +\boldsymbol{\theta}_{i,k} \\
+    \begin{split}
+    \delta \mathbf{v}_{b,k+1}&=\delta \mathbf{v}_{b,k}+\left(-\begin{bmatrix} \mathbf{R}\mathbf{g} \end{bmatrix}_\times\delta\boldsymbol{\theta}_k - \begin{bmatrix}\boldsymbol{\omega}_{m,k}-\boldsymbol{\beta}_{\omega,k} \end{bmatrix}_\times\delta \mathbf{v}_{b,k} \right.\\ & \left. -\delta\boldsymbol{\beta}_{a,k}-\begin{bmatrix}\mathbf{v}_{b,k} \end{bmatrix}_\times \delta\boldsymbol{\beta}_{\omega,k}\right)
+    \Delta t -\begin{bmatrix}
+        \mathbf{v}_{b,k}
+    \end{bmatrix}_\times\boldsymbol{\theta}_{i,k}-\mathbf{v}_{b,i,k}
+    \end{split} \\
+    \delta\boldsymbol{\beta}_{a,k+1}&=\delta\boldsymbol{\beta}_{a,k}+\mathbf{a}_{i,k} \\
+    \delta\boldsymbol{\beta}_{\omega,k+1}&=\delta\boldsymbol{\beta}_{\omega,k}+\boldsymbol{ \omega}_{i,k}
+\end{align}
+\label{eq:error-eq-discrete}
+\end{subequations}
+
+$\boldsymbol{\theta}_i,\mathbf{v}_{b,i},\mathbf{a}_i$ and $\boldsymbol{\omega}_i$ are the random impulses which form the stochastic part of the equation. Those noises which appear only negatively in the equations can be changed to positive freely. Their covariance matrices are integrated as (see \cite{quaternion-eskf} Appendix E for details):
+\begin{equation}
+\begin{aligned}
+    \boldsymbol{\Theta}_i&=\sigma_{\eta_\omega}^2\Delta t^2\mathbf{I} \quad [rad^2] \\
+    \mathbf{V}_i&=\sigma_{\eta_a}^2\Delta t^2\mathbf{I} \quad [m^2/s^2]\\
+    \mathbf{A}_i&=\sigma_{\beta_a}^2\Delta t\mathbf{I} \quad [m^2/s^4]\\
+    \boldsymbol{\Omega}_i&=\sigma_{\beta_\omega}^2\Delta t\mathbf{I} \quad [rad/s],
+\end{aligned}
+\label{eq:noises}
+\end{equation}
+where $\sigma_{\eta_a}$, $\sigma_{\eta_\omega}$, $\sigma_{\beta_a}$ and $\sigma_{\beta_\omega}$ are the deviations of acceleration, gyroscope measurement noise and the slowly varying bias impacts.
+
+\section{Measurement equation}
+
+The measurement equation is based on the fundamental concept that the system can acquire pixel coordinates of feature points as measurements. To form the residual, the predicted pixel coordinates must be determined for each feature point. This can be accomplished through the application of the pinhole equation \eqref{eq:pinhole-projection}, which leads to:
+
+\begin{equation}
+    h(\mathbf{T}_{CB}(\mathbf{R}_{BN}(\mathbf{p}_n^f-\mathbf{p}_n^b)-\mathbf{p}_b^c))=
+    h(\mathbf{p}_c^f)=
+    \begin{bmatrix}
+        u \\ v \\ f
+    \end{bmatrix}, 
+\end{equation}
+
+where $\mathbf{p}_n^f$ denotes the feature position in NED frame. The transformation above requires the usage of both the state ($\mathbf{p}_n^b, \mathbf{q}_n^b$) and feature position $\mathbf{p}_n^f$ and it is worth highlighting that the feature positions are not known prior unless a visual map of the surroundings is available onboard.
+
+\section{ESKF framework}
+
+The ESKF is a special version of the Kalman filter, that contains two state vectors: one for the nominal- ($\mathbf{x}$) and the other for the error-state ($\delta\mathbf{x}$) vector. The system is governed by the IMU measurements $\mathbf{c}$ and the noise perturbations $\mathbf{i}$:
+\begin{equation}
+    \mathbf{x}=\begin{bmatrix}
+    \mathbf{p} \\
+    \mathbf{q} \\
+    \mathbf{v}_{b} \\
+    \boldsymbol{\beta}_{a} \\
+    \boldsymbol{\beta}_{\omega}
+    \end{bmatrix}, \qquad
+    \delta\mathbf{x}=\begin{bmatrix}
+    \delta\mathbf{p} \\
+    \delta\boldsymbol{\theta} \\
+    \delta\mathbf{v}_{b} \\
+    \delta\boldsymbol{\beta}_{a} \\
+    \delta\boldsymbol{\beta}_{\omega}
+    \end{bmatrix}, \qquad
+    \mathbf{u}=\begin{bmatrix}
+        \mathbf{a}_{m} \\
+        \boldsymbol{\omega}_{m}
+    \end{bmatrix}, \qquad
+    \mathbf{i}=\begin{bmatrix}
+        \boldsymbol{\theta}_i \\
+        \mathbf{v}_i \\
+        \mathbf{a}_i \\
+        \boldsymbol{\omega}_i
+    \end{bmatrix}
+\end{equation}
+
+\subsection{Prediction step}
+
+One of the best properties of the ESKF framework is that during the prediction steps the nominal state can be calculated by the original nonlinear equations \eqref{eq:nom-eq-discrete}, but the error state has to be linearized. The transition- ($\mathbf{F}_x$) and noise matrix ($\mathbf{F}_i$) can be derived from \eqref{eq:error-eq-discrete}, where $\delta\mathbf{x}_{k+1}=f(\delta\mathbf{x}_k)$:
+\begin{equation}
+\begin{aligned}
+     &\mathbf{F}_x=\frac{\partial f}{\partial\delta\mathbf{x}}= \\  
+     & \small \begin{bmatrix}
+        \mathbf{I} & \mathbf{R}^T\begin{bmatrix}\mathbf{v}_{b}\end{bmatrix}_\times\Delta t & \mathbf{R}^T\Delta t & \mathbf{0} & \mathbf{0} \\
+        \mathbf{0} & \mathbf{R}\{-(\boldsymbol{\omega}_{m}-\boldsymbol{\beta}_{\omega})\Delta t\} & \mathbf{0} & \mathbf{0} & \mathbf{I}\Delta t \\
+        \mathbf{0} & -\begin{bmatrix}\mathbf{R}\mathbf{g}\end{bmatrix}_\times\Delta t & \mathbf{I}-\begin{bmatrix} \boldsymbol{\omega}_{m}-\boldsymbol{\beta}_{\omega}\end{bmatrix}_\times\Delta t & -\mathbf{I}\Delta t & -\begin{bmatrix} \mathbf{v}_{b}\end{bmatrix}_\times\Delta t \\
+        \mathbf{0} & \mathbf{0} & \mathbf{0} & \mathbf{I} & \mathbf{0} \\
+        \mathbf{0} & \mathbf{0} & \mathbf{0} & \mathbf{0} & \mathbf{I}
+    \end{bmatrix}
+\end{aligned}
+\end{equation}
+
+\begin{equation}
+    \mathbf{F}_i=\frac{\partial f}{\partial \mathbf{i}}=\begin{bmatrix}
+         \mathbf{0} & \mathbf{0} & \mathbf{0} & \mathbf{0} \\
+         \mathbf{I} & \mathbf{0} & \mathbf{0} & \mathbf{0} \\
+         -\begin{bmatrix}
+             \mathbf{v}_{b}
+         \end{bmatrix}_\times & -\mathbf{I} & \mathbf{0} & \mathbf{0} \\
+         \mathbf{0} & \mathbf{0} & \mathbf{I} & \mathbf{0} \\
+         \mathbf{0} & \mathbf{0} & \mathbf{0} & \mathbf{I}
+    \end{bmatrix} \quad \mathbf{0},\; \mathbf{I}\in\mathbb{R}^{3\times 3}
+\end{equation}
+
+Now the error state dynamic is:
+\begin{equation}
+    \delta\mathbf{x}_{k+1}=\mathbf{F}_x\delta\mathbf{x}_k+\mathbf{F}_{i}\mathbf{i}_k
+    \label{eq:error-state-dyn}
+\end{equation}
+
+The process noise matrix is defined as:
+\begin{equation}
+    \mathbf{Q}=E\{\mathbf{i}\mathbf{i}^T\}=\begin{bmatrix}
+        \boldsymbol{\Theta}_i & \mathbf{0} & \mathbf{0} & \mathbf{0} \\
+        \mathbf{0} & \mathbf{V}_i & \mathbf{0} & \mathbf{0} \\
+        \mathbf{0} & \mathbf{0} & \mathbf{A}_i & \mathbf{0} \\
+        \mathbf{0} & \mathbf{0} & \mathbf{0} & \boldsymbol{\Omega}_i
+    \end{bmatrix} \quad \mathbf{Q}\in\mathbb{R}^{12\times 12},\quad \mathbf{0}\in\mathbb{R}^{3\times 3}
+\end{equation}
+
+Using formulas above and denote equations in \eqref{eq:nom-eq-discrete} with $f(.)$ the prediction step involves forecasting the nominal state and error state too:
+\begin{subequations}
+\begin{align}
+    \mathbf{x}_{k+1} &= f(\mathbf{x}_k, \mathbf{u}_k) \\
+    (\delta\hat{\mathbf{x}}_{k+1} &= \mathbf{F}_x\delta\hat{\mathbf{x}}_k) \label{eq:err-state-dyn}\\
+    \mathbf{P}_{k+1} &= \mathbf{F}_x\mathbf{P}_k\mathbf{F}_x^T+ \mathbf{F}_i\mathbf{Q}\mathbf{F}_i^T,
+    \label{eq:err-cov-prop}
+\end{align}
+\end{subequations}
+
+where $\delta\hat{\mathbf{x}}$ is the mean of the error state, therefore $\delta\mathbf{x}\sim\mathcal{N}(\delta\hat{\mathbf{x}},\mathbf{P})$, but when a measurement update happens and the error was injected into the nominal state it gets reset to 0, therefore accounting for the error only involves the propagation of the covariance matrix.
+
+\subsection{Update step}
+
+In this section, I focus on how the measurement Jacobian of the error state is calculated. The most straightforward approach to do that for a feature point involves the utilization of the chain rule. First, the Jacobian of the pixel measurement with respect to the feature point ($\mathbf{J}\in\mathbb{R}^{2\times3}$) has to be computed, then the Jacobian of the feature point with respect to the true state ($\mathbf{P}_{x_t}\in\mathbb{R}^{3\times 16}$) and finally the Jacobian of the true state with respect to the error state ($\mathbf{X}_{\delta x}\in\mathbb{R}^{16\times 15}$). So the jacobian of the measurement with respect to the error state:
+\begin{equation}
+    \mathbf{H}_x=\frac{\partial h(\mathbf{p}_c^f)}{\partial\delta\mathbf{x}}= 
+    \frac{\partial h(\mathbf{p}_c^f)}{\partial\mathbf{p}_c^f}
+    \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{x}_t}
+    \frac{\partial\mathbf{x}_t}{\partial\delta\mathbf{x}} =\mathbf{J}\mathbf{P}_{x_t}\mathbf{X}_{\delta x},
+\end{equation} 
+
+\subsection*{Jacobian of the pixel measurements with respect to feature point}
+
+The Jacobian of the projection is calculated by linearizing \eqref{eq:pinhole-projection}, whereas the transformation results in a 3-D vector, but the derivative of the 3$^{rd}$ coordinate leads to zeros, therefore it is neglected. It shows the property that we lost a bit of information during the projection.
+\begin{equation}
+    \mathbf{J}=\begin{bmatrix}
+        \frac{\partial h_1(\mathbf{p}_c^f)}{\partial x} & \frac{\partial h_1(\mathbf{p}_c^f)}{\partial y} & \frac{\partial h_1(\mathbf{p}_c^f)}{\partial z} \\
+        \frac{\partial h_2(\mathbf{p}_c^f)}{\partial x} & \frac{\partial h_2(\mathbf{p}_c^f)}{\partial y} & \frac{\partial h_2(\mathbf{p}_c^f)}{\partial z}
+    \end{bmatrix} = \left.\begin{bmatrix}
+        \frac{f}{z} & 0 & -\frac{fx}{z^2} \\
+        0 & \frac{f}{z} & -\frac{fy}{z^2}
+    \end{bmatrix}\right\vert_{\mathbf{p}_c^f}
+    \label{eq:p-der-by-xt}
+\end{equation}
+
+\subsection*{Jacobian of the feature point with respect to the true-state} 
+
+The next step is to determine the derivative of $\mathbf{p}_c^f$ with respect to the true state. Expressing the feature vector in the camera frame with the state:
+\begin{equation}
+    \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{x}_t}=
+    \frac{\partial\mathbf{T}_{CB}\mathbf{R}\{\mathbf{q}_{BN}\}(\mathbf{p}_n^f-\mathbf{p}_n^b)}{\partial\mathbf{x}_t},
+    \label{eq:der-pc-by-xt}
+\end{equation}
+
+$\mathbf{p}_n^b$ and $\mathbf{q}_{NB}$ are elements of the state-vector, just the ease notation is omitted. It can be seen that there is no other state parameter in the expression, therefore further derivatives result in $\mathbf{0}_{3\times 3}$ matrices. The derivative with respect to $\mathbf{p}_n^b$ is:
+\begin{equation}
+    \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{p}_n^b}=-\mathbf{T}_{CB}\mathbf{R}\{\mathbf{q}_{BN}\}
+\end{equation}
+
+Calculating the derivative by the quaternion is tricky. Initially, the quaternion rotation formula needs to be employed on \eqref{eq:der-pc-by-xt}, then the derivative should be decomposed using the chain rule into separate components: one with respect to the vector and the other with respect to the quaternion:
+\begin{equation}
+\begin{aligned}
+    \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{q}_{NB}}&=\left.
+    \frac{\partial\left(\mathbf{q}_{CB}\otimes\mathbf{q}_{NB}\otimes(\mathbf{p}_n^f-\mathbf{p}_n^b) \otimes\mathbf{q}_{NB}^*\otimes\mathbf{q}_{CB}^*\right)}{\partial\mathbf{q}_n} \right\vert_{\mathbf{a}=\mathbf{p}_n^f-\mathbf{p}_n^b} \\ 
+    &=\frac{\partial\left(\mathbf{q}_{CB}\otimes\mathbf{q}_{NB}\otimes\mathbf{a} \otimes\mathbf{q}_{NB}^*\otimes\mathbf{q}_{CB}^*\right)}{\partial\left(\mathbf{q}_{NB}\otimes\mathbf{a} \otimes\mathbf{q}_{NB}^*\right)}
+    \frac{\partial\left(\mathbf{q}_{NB}\otimes\mathbf{a}\otimes\mathbf{q}_{NB}^*\right)}{\partial\mathbf{q}_{NB}}
+\end{aligned}
+\end{equation}
+
+Using partial results for the two Jacobian above from Appendices \ref{app:der-rot-by-vec} and \ref{app:der-rot-by-quat}, the outcome is:
+\begin{equation}
+    \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{q}_{NB}}=2\mathbf{T}_{CB}\begin{bmatrix}
+        q_w\mathbf{a}+\mathbf{q}_v\times\mathbf{a}\; | \;\mathbf{q}_v^T\mathbf{a}\mathbf{I}_{3\times 3}+\mathbf{q}_v\mathbf{a}^T-\mathbf{a}\mathbf{q}_v^T-q_w\begin{bmatrix}
+            \mathbf{a}
+        \end{bmatrix}_\times
+    \end{bmatrix}
+\end{equation}
+
+The whole derivative by the true state results in a $3\times 16$ matrix:
+\begin{equation}
+    \mathbf{P}_{\mathbf{x}_t}=\begin{bmatrix}
+     \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{p}_n^b} & \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{q}_n} & \mathbf{0}_{3\times 9}
+    \end{bmatrix}
+\end{equation}
+
+\subsection*{Jacobian of the true-state with respect to the error-state}
+
+Finally, the Jacobian of the true state with respect to the error state should be determined. All derivatives yield the identity block $\mathbf{I}_3$, except for the quaternion, this can be understood by examining the composition of individual states in Table \ref{tab:eskf-states}. Looking to the Jacobian of quaternion $\mathbf{Q}_{\delta\theta}\in\mathbb{R}^{4\times 3}$:
+\begin{equation}
+    \frac{\partial(\delta\mathbf{q}\otimes \mathbf{q})}{\partial\delta\boldsymbol{\theta}} = \mathbf{Q}_{\delta\theta} = \frac{1}{2}\begin{bmatrix}
+        \mathbf{q}
+    \end{bmatrix}_R
+    \begin{bmatrix}
+        \mathbf{0}^T \\
+        \mathbf{I}_3
+    \end{bmatrix} 
+\end{equation}
+
+Detailed calculations can be found in Appendix \ref{app:der-true-quat-by-error-rotvec}, which leads to the Jacobian:
+\begin{equation}
+    \frac{\partial\mathbf{x}_t}{\partial\delta\mathbf{x}} = \mathbf{X}_{\delta x}=\begin{bmatrix}
+        \frac{\partial\mathbf{p}_{n,t}}{\partial\delta\mathbf{p}_n} & \dots & \mathbf{0}_{3\times 3} \\ \vdots & \ddots & \vdots \\
+        \mathbf{0}_{3\times 3} & \dots & \frac{\partial\boldsymbol{\beta}_{\omega, t}}{\partial\delta\boldsymbol{\beta}_{\omega}}
+    \end{bmatrix} = \begin{bmatrix}
+        \mathbf{I}_3 & \mathbf{0}_{3\times 3} & \mathbf{0}_{3\times 3} \\
+        \mathbf{0}_{4\times 3} & \mathbf{Q}_{\delta\theta} & \mathbf{0}_{4\times 9} \\
+        \mathbf{0}_{3\times 3} & \mathbf{0}_{3\times 3} & \mathbf{I}_{9}
+    \end{bmatrix}
+\end{equation}
+
+\subsection{Error injection into the nominal-state}
+
+After calculating the measurement matrix, the Kalman gain ($\mathbf{K}$) should be determined based on errors in the state, the measurement, and the feature estimation. The last one should be considered if it's not known prior, therefore I will detail the Kalman gain calculation later because it's a complex step. The Kalman gain and the residual ($\mathbf{r}$) can be utilized to calculate the error state:
+\begin{equation}
+    \delta\hat{\mathbf{x}} = \mathbf{K}\mathbf{r} \quad \mathbf{K}\in\mathbb{R}^{15\times 2k},\quad\mathbf{r}\in\mathbb{R}^{2k\times 1},
+\end{equation}
+where $\delta\hat{\mathbf{x}}$ is the mean of the error state, and $k$ is the number of features involved in the update.
+
+The mean has to be injected into the nominal state, this operation requires composition from Table \ref{tab:eskf-states}. All quantities require a simple sum of the nominal and error state, except for the rotation which can be performed as a left-side quaternion multiplication, therefore the injection procedure:
+\begin{subequations}
+\begin{align}
+    \mathbf{p} &= \mathbf{p} + \delta\hat{\mathbf{p}} \\
+    \mathbf{q} &= \mathbf{q}\{\delta\hat{\boldsymbol{\theta}}\}\otimes\mathbf{q} \\
+    \mathbf{v}_b &= \mathbf{v}_b + \delta\hat{\mathbf{v}}_b \\
+    \boldsymbol{\beta}_a &= \boldsymbol{\beta}_a + \delta\hat{\boldsymbol{\beta}}_a \\
+    \boldsymbol{\beta}_\omega &= \boldsymbol{\beta}_\omega + \delta\hat{\boldsymbol{\beta}}_\omega
+\end{align}
+\end{subequations}
+
+Next, the error state gets reset, therefore its mean has to be removed, which is done by the inverse operations above. I'm denoting this operation with $\delta\mathbf{x}^+=g(\delta\mathbf{x})$, which can be expressed as:
+\begin{subequations}
+\begin{align}
+    \delta\mathbf{p}^+ &= \delta\mathbf{p} - \hat{\delta\mathbf{p}}\\
+    \delta\boldsymbol{\theta}^+ &= 2\begin{bmatrix}
+        0 & \mathbf{0}^T \\
+        \mathbf{0} & \mathbf{I}_3
+    \end{bmatrix}\left(\mathbf{q}\{\delta\boldsymbol{\theta}\}\otimes\mathbf{q}\{-\hat{\delta\boldsymbol{\theta}}\}\right) 
+    \label{subeq:g-rotvec}\\
+    \delta\mathbf{v}_b^+ &= \delta\mathbf{v}_{b} - \hat{\delta\mathbf{v}}_{b} \\
+    \delta\boldsymbol{\beta}_{a}^+ &= \delta\boldsymbol{\beta}_{a} - \hat{\delta\boldsymbol{\beta}}_{a} \\
+    \delta\boldsymbol{\beta}_{\omega}^+ &= \delta\boldsymbol{\beta}_{\omega} - \hat{\delta\boldsymbol{\beta}}_{\omega}
+\end{align}
+\end{subequations}
+
+To update the error state, the mean has to be reset to zeros, but the covariance matrix update depends on $g(.)$, thus the full error reset:
+\begin{subequations}
+\begin{align}
+    \hat{\delta\mathbf{x}} &=\mathbf{0} \\
+    \mathbf{P}^+ &= \mathbf{G}\mathbf{P}\mathbf{G}^T
+\end{align}    
+\end{subequations}
+
+Here, $\mathbf{G}$ is the Jacobian matrix of $g(.)$, defined as:
+\begin{equation}
+    \mathbf{G}=\left.\frac{\partial g}{\partial\delta\mathbf{x}}\right\vert_{\hat{\delta\mathbf{x}}}=\begin{bmatrix}
+        \mathbf{I}_3 & \mathbf{0}_{3\times 3} & \mathbf{0}_{3\times 3} \\
+        \mathbf{0}_{3\times 3} & \mathbf{I}_3+\begin{bmatrix}
+            \frac{1}{2}\hat{\delta\boldsymbol{\theta}}
+        \end{bmatrix}_\times & \mathbf{0}_{3\times 3} \\
+        \mathbf{0}_{3\times 3} & \mathbf{0}_{3\times 3} & \mathbf{I}_9
+    \end{bmatrix}
+\end{equation}
+
+Similarly to what happened with the update Jacobian before, all quantities result in identity blocks, except the orientation part. The calculations related to the formula above are detailed in Appendix \ref{app:der-g-by-rotvec}.

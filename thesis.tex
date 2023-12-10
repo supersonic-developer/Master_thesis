@@ -1,0 +1,103 @@
+\documentclass[12pt,a4paper,twoside]{report}            
+
+\input{include/packages}
+
+%TODO Set the main variables
+\newcommand{\vikszerzoVezeteknev}{Novozánszki}
+\newcommand{\vikszerzoKeresztnev}{Zsombor}
+
+\newcommand{\vikkonzulensAMegszolitas}{Dr. }
+\newcommand{\vikkonzulensAVezeteknev}{Szádeczky-Kardoss Gincsainé}
+\newcommand{\vikkonzulensAKeresztnev}{Emese}
+
+\newcommand{\vikkonzulensBMegszolitas}{Dr. }
+\newcommand{\vikkonzulensBVezeteknev}{Bauer}
+\newcommand{\vikkonzulensBKeresztnev}{Péter}
+
+\newcommand{\vikkonzulensCMegszolitas}{}
+\newcommand{\vikkonzulensCVezeteknev}{}
+\newcommand{\vikkonzulensCKeresztnev}{}
+
+\newcommand{\vikcim}{Visual-inertial navigation with intermittent or spoofed GPS information}
+\newcommand{\viktanszek}{\bmeiit} 
+\newcommand{\vikdoktipus}{\msc} 
+\newcommand{\vikmunkatipusat}{diplomatervet} 
+
+\newcommand{\szerzoMeta}{\vikszerzoVezeteknev{} \vikszerzoKeresztnev} % 
+\input{include/thesis-en}
+
+\input{include/preamble}
+
+%--------------------------------------------------------------------------------------
+% Table of contents and the main text
+%--------------------------------------------------------------------------------------
+\begin{document}
+
+\selectthesislanguage
+
+%----------------------------------- Title page ---------------------------------------
+\include{include/titlepage}		   
+
+%-------------------------------- Project Description ---------------------------------
+\includepdf[]{include/project.pdf}
+
+\pagenumbering{roman}
+%--------------------------------- Table of Contents ----------------------------------
+\tableofcontents
+
+
+%------------------------------ Declaration and Abstract ------------------------------
+
+\include{include/declaration} 
+\include{content/0-abstract}    
+
+
+% The main part of the thesis
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\pagenumbering{arabic}
+
+\input{content/1-introduction}
+\input{content/2-math}
+\input{content/3-eskf}
+\input{content/4-LOST}
+\input{content/5-integration}
+\input{content/6-development}
+\input{content/7-conclusion}
+
+\input{content/appendix}
+% Abbreviations
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\include{content/abbreviations}
+
+% List of Figures, Tables, Algorithms
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\begingroup
+\let\clearpage\relax
+
+\phantomsection
+\addcontentsline{toc}{chapter}{\listfigurename}
+\listoffigures
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{\listtablename}
+\listoftables
+
+%\clearpage
+%\phantomsection
+%\addcontentsline{toc}{chapter}{\lstlistlistingname}
+%\lstlistoflistings
+
+\endgroup
+
+
+
+
+
+% Bibliography
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{\bibname}
+\bibliography{bib/mybib}
+\end{document}
