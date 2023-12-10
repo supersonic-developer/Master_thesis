@@ -5,6 +5,7 @@
 % another possibility is to use the body of this command without \fancypagestyle
 % and use \pagestyle{fancy} but in that case the special pages
 % (like the ToC, the References, and the Chapter pages)remain in plane style
+% chktex 7
 
 \pagestyle{plain}
 \geometry{inner=35mm, outer=25mm, top=28mm, bottom=25mm}
@@ -39,7 +40,7 @@
     urlcolor=blue             % color of external links
 }
 
-\def\UrlBreaks{\do\/\do-\do_}
+\def\UrlBreaks{\do-\do_}
 %--------------------------------------------------------------------------------------
 % Set up listings
 %--------------------------------------------------------------------------------------
@@ -56,7 +57,7 @@
 	aboveskip=0.5cm,
 	belowskip=0.3cm,
 	literate=*
-		{á}{{\'a}}1	{é}{{\'e}}1	{í}{{\'i}}1	{ó}{{\'o}}1	{ö}{{\"o}}1	{ő}{{\H{o}}}1	{ú}{{\'u}}1	{ü}{{\"u}}1	{ű}{{\H{u}}}1
+        {á}{{\'a}}1	{é}{{\'e}}1	{í}{{\i'}}1	{ó}{{\'o}}1	{ö}{{\"o}}1	{ő}{{\H{o}}}1	{ú}{{\'u}}1	{ü}{{\"u}}1	{ű}{{\H{u}}}1
 		{Á}{{\'A}}1	{É}{{\'E}}1	{Í}{{\'I}}1	{Ó}{{\'O}}1	{Ö}{{\"O}}1	{Ő}{{\H{O}}}1	{Ú}{{\'U}}1	{Ü}{{\"U}}1	{Ű}{{\H{U}}}1
 }
 
@@ -153,7 +154,7 @@
 % Some new commands and declarations
 %--------------------------------------------------------------------------------------
 \newcommand{\code}[1]{{\upshape\ttfamily\scriptsize\indent #1}}
-\newcommand{\doi}[1]{DOI: \href{http://dx.doi.org/\detokenize{#1}}{\raggedright{\texttt{\detokenize{#1}}}}} % A hivatkozások közt így könnyebb DOI-t megadni.
+\newcommand{\doi}[1]{DOI:\@ \href{http://dx.doi.org/\detokenize{#1}}{\raggedright{\texttt{\detokenize{#1}}}}} % A hivatkozások közt így könnyebb DOI-t megadni.
 
 \DeclareMathOperator*{\argmax}{arg\,max}
 %\DeclareMathOperator*[1]{\floor}{arg\,max}
@@ -191,4 +192,4 @@
 %\patchcmd{\chapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}
 %\makeatother
 
-\allowdisplaybreaks
+\allowdisplaybreaks%
