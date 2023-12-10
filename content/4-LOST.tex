@@ -1,41 +1,39 @@
-\chapter{Overview of the triangulation method}
-\label{chap:LOST}
+\chapter{Overview of the triangulation method}\label{chap:LOST}
 
 In the previous chapter, the ESKF was introduced as a method capable of updating the state using camera measurements, provided by the precise localization coordinates of visible feature points are known. However, in practical applications, assuming prior knowledge of the positions of these visible feature points is often untenable. Consequently, there arises the need to estimate these vectors, a process commonly referred to as triangulation.
 
-This chapter provides an in-depth look at the triangulation method applied in this study, with a focus on its integration into the visual-inertial navigation system. The foundation of this method draws from \cite{absolute-triangulation}, utilizing the core equations as described therein. However, their approach only takes into account uncertainties in the camera measurements, but the current system requires consideration of uncertainties in the states too.
+This chapter provides an in-depth look at the triangulation method applied in this study, with a focus on its integration into the visual-inertial navigation system. The foundation of this method draws from~\cite{absolute-triangulation}, utilizing the core equations as described therein. However, their approach only takes into account uncertainties in the camera measurements, but the current system requires consideration of uncertainties in the states too.
 
-The central objective of this chapter is to explain the key components and modifications in the custom-made triangulation approach. In particular, answers will be given to questions such as how position and orientation are involved in the LOST equations, and how can be formed the recursive version of LOST.
+The central objective of this chapter is to explain the key components and modifications in the custom-made triangulation approach. In particular, answers will be given to questions such as how position and orientation are involved in the LOST equations, and how can be formed the recursive version of LOST.\@ The chapter concludes with a discussion of the covariance calculations and the optimal solution.+
 
 \section{Problem statement}
 
-The modern triangulation problem takes on one of two forms: intersection or resection \cite{ResectionInSurvey_1918}, shown in the figure \ref{fig:intersec-resec}.
+The modern triangulation problem takes on one of two forms: intersection or resection~\cite{ResectionInSurvey_1918}, shown in the Figure~\ref{fig:intersec-resec}.
 
 \begin{figure}[!ht]
     \centering
     \includegraphics[width=0.35\textwidth]{figures/intersec-resec.png}
-    \caption{Illustration of intersection (top) and resection (bottom) forms of the triangulation problem (\cite{absolute-triangulation}: page 3)}
-    \label{fig:intersec-resec}
+    \caption{Illustration of intersection (top) and resection (bottom) forms of the triangulation problem (\cite{absolute-triangulation}: page 3)}\label{fig:intersec-resec}
 \end{figure}
 
 The main difference between the two formalizations is that the intersection assumes measurements taken from known vertices ($\mathbf{p}_1$, $\mathbf{p}_2$). These vertices express the camera positions at each measurement in the NED frame ($\mathbf{p}_n^c$) and the goal is to determine the position of a visible feature point ($\mathbf{p}_n^f$). On the other hand, the resection problem supposes known visible vertices ($\mathbf{p}_{n, 1}^f$, $\mathbf{p}_{n, 2}^f$) and aims to estimate the position where the measurement was taken ($\mathbf{p}$).
 
-The intersection problem has many practical applications such as satellite orbit determination \cite{TriagulationSpaceOrb1, TriagulationSpaceOrb2}, and 3-D scene reconstruction usually called Structure from Motion (SfM) \cite{Triang3D1, Triang3D2, Triang3D3}. The resection problem describes the vehicle localization problem that is generally included in navigation applications \cite{rel-nav-1, rel-nav-2, TriangNav}. In this project, both forms are applied, because LOST is used to optimize 3-D coordinates of visible feature points which means a 3-D reconstruction of the environment. On the contrary, the Kalman filter update is the form of a resection problem in the sense that the optimized LOST estimates are used to improve the state estimates.
+The intersection problem has many practical applications such as satellite orbit determination~\cite{TriagulationSpaceOrb1, TriagulationSpaceOrb2}, and 3-D scene reconstruction usually called Structure from Motion (SfM)~\cite{Triang3D1, Triang3D2, Triang3D3}. The resection problem describes the vehicle localization problem that is generally included in navigation applications~\cite{rel-nav-1, rel-nav-2, TriangNav}. In this project, both forms are applied, because LOST is used to optimize 3-D coordinates of visible feature points which means a 3-D reconstruction of the environment. On the contrary, the Kalman filter update is the form of a resection problem in the sense that the optimized LOST estimates are used to improve the state estimates.
 
 \subsection{Line of sight (LOS) measurements}
 
-The triangulation problem typically involves angles acquired through various optical instruments. In vehicle navigation, angles are often derived from images captured by cameras or telescopes. Regardless of the specific application, the angle measurements obtained through these optical instruments describe the direction from the sensor to the observed point. In other words, they express the path from one vertex of a triangle to another, and this direction represents a straight line connecting these two points, commonly known as the "line of sight" (LOS).
+The triangulation problem typically involves angles acquired through various optical instruments. In vehicle navigation, angles are often derived from images captured by cameras or telescopes. Regardless of the specific application, the angle measurements obtained through these optical instruments describe the direction from the sensor to the observed point. In other words, they express the path from one vertex of a triangle to another, and this direction represents a straight line connecting these two points, commonly known as the ``line of sight'' (LOS).
 
 Before I delve into the details, it's important to establish a few mathematical notation:
 \begin{itemize}
-    \item The actual measurement is $\begin{bmatrix} u_i & v_i & f\end{bmatrix}^T = \overline{\mathbf{u}}_i = \mathbf{K}\mathbf{u}_i$, but the LOST algorithm uses LOS measurement ($\mathbf{u}$, Figure \ref{fig:camera-system}) that can be derived from actual measurement as $\mathbf{u}_i=\mathbf{K}^{-1}\overline{\mathbf{u}}_i$. However, it is important to emphasize that this transformation accounts for both the adjustment of the principal point and multiplying the vector with the focal length. Later merely introduces a scaling factor, which is inherently resolved in LOST equations, therefore it is enough to compensate the principal point.
+    \item The actual measurement is $\begin{bmatrix} u_i & v_i & f\end{bmatrix}^T = \overline{\mathbf{u}}_i = \mathbf{K}\mathbf{u}_i$, but the LOST algorithm uses LOS measurement ($\mathbf{u}$, Figure~\ref{fig:camera-system}) that can be derived from actual measurement as $\mathbf{u}_i=\mathbf{K}^{-1}\overline{\mathbf{u}}_i$. However, it is important to emphasize that this transformation accounts for both the adjustment of the principal point and multiplying the vector with the focal length. Later merely introduces a scaling factor, which is inherently resolved in LOST equations, therefore it is enough to compensate the principal point.
     \item The feature's position ($\mathbf{p}_c^f$) and the LOS measurement differ only with a scaling factor: $\mathbf{u}_i \propto \mathbf{a}_i \propto \mathbf{p}_{c,i}^f$, where $\mathbf{a}_i=\frac{\mathbf{u}_i}{||\mathbf{u}_i||} = \frac{\mathbf{p_{c,i}^f}}{||\mathbf{p}_{c,i}^f||}$ 
     \item $\mathbf{p}_{c,i}^f=\rho\mathbf{a}_i$, where $\rho$ denotes the range from the camera center to the observed point
 \end{itemize}
 
 \section{LOST method}
 
-When more than 2 LOS measurements are available the polynomial methods do not scale well \cite{absolute-triangulation}, therefore the LOST suggests a Maximum Likelihood Estimation (MLE) solution for an unknown vertex ($\mathbf{p}_n^f$). The linear system can be created by double applications of the Law of Sines. Briefly, this trigonometric law relates the angles and side lengths of a triangle. 
+When more than 2 LOS measurements are available the polynomial methods do not scale well~\cite{absolute-triangulation}, therefore the LOST suggests a Maximum Likelihood Estimation (MLE) solution for an unknown vertex ($\mathbf{p}_n^f$). The linear system can be created by double applications of the Law of Sines. Briefly, this trigonometric law relates the angles and side lengths of a triangle. 
 
 The initial equation is the Direct Linear Transform (DLT) form of the Law of Sines. This mathematical prescription removes the unknown scale ambiguity along the LOS trajectory, achieved by utilizing the collinearity of the LOS measurement ($\mathbf{u}$) and feature vector ($\mathbf{p}_c^f$). The vector of the feature can be expressed as: 
 \begin{equation}
@@ -50,19 +48,18 @@ Then the initial equation is:
     \end{bmatrix}_\times\mathbf{p}_c^f=\begin{bmatrix}
         \mathbf{u}
     \end{bmatrix}_\times\mathbf{R}_{CB}(\mathbf{R}_{BN}(\mathbf{p}_n^f-\mathbf{p}_n^b)-\mathbf{p}_b^c)=\mathbf{0}
-\end{equation}
-\label{eq:dlt}
+\end{equation}\label{eq:dlt}
 
 \subsection{Covariance calculations}
 
-\eqref{eq:dlt} is only true if every value is ideal. When only the noisy measurements and nominal states are available, the right-hand side is no longer exactly zero:
+~\eqref{eq:dlt} is only true if every value is ideal. When only the noisy measurements and nominal states are available, the right-hand side is no longer exactly zero:
 \begin{equation}
     \begin{bmatrix}
         \mathbf{u}_i
     \end{bmatrix}_\times\mathbf{p}_c^f=\boldsymbol{\epsilon}_i
 \end{equation}
 
-$\epsilon_i$ can be calculated by applying the previously introduced error models in Table \ref{tab:eskf-states} which are just an additional error in the case of body position and measurement noise, but not for the rotation. Using the notation $\mathbf{u}_t=\mathbf{u}+\delta\mathbf{u}$ for the measurement model, the cross-product results in:
+$\epsilon_i$ can be calculated by applying the previously introduced error models in Table~\ref{tab:eskf-states} which are just an additional error in the case of body position and measurement noise, but not for the rotation. Using the notation $\mathbf{u}_t=\mathbf{u}+\delta\mathbf{u}$ for the measurement model, the cross-product results in:
 \begin{equation}
     \boldsymbol{\epsilon}_i=\begin{bmatrix}
         \mathbf{u}_i
@@ -79,7 +76,7 @@ $\epsilon_i$ can be calculated by applying the previously introduced error model
 \end{equation}
 
 
-In \eqref{eq:eps} there was used the property $\rho\mathbf{a}_i = \mathbf{p}_c^f$, because $\mathbf{p}_c^f$ is not known apriori, but the scaling factor can be calculated with applying the Law of Sines. Let's consider the intersection problem in Figure \ref{fig:intersec-resec}, the traveled distance can be determined as $\mathbf{d}_{ij}=\mathbf{p}_{n,j}^c-\mathbf{p}_{n, i}^c = \mathbf{p}_{n,j}^b-\mathbf{p}_{n, i}^b$, and applying law of sines on vertex $\mathbf{p}_{n,j}^b$ and $\mathbf{p}_n^f$:
+In~\eqref{eq:eps} there was used the property $\rho\mathbf{a}_i = \mathbf{p}_c^f$, because $\mathbf{p}_c^f$ is not known apriori, but the scaling factor can be calculated with applying the Law of Sines. Let's consider the intersection problem in Figure~\ref{fig:intersec-resec}, the traveled distance can be determined as $\mathbf{d}_{ij}=\mathbf{p}_{n,j}^c-\mathbf{p}_{n, i}^c = \mathbf{p}_{n,j}^b-\mathbf{p}_{n, i}^b$, and applying law of sines on vertex $\mathbf{p}_{n,j}^b$ and $\mathbf{p}_n^f$:
 \begin{equation}
     \frac{||\mathbf{p}_{c,j}^f||}{\sin\phi}=\frac{||\mathbf{d}_{ij}||}{\sin\theta}\Rightarrow \rho_j=||\mathbf{p}_{c,j}^f||=\frac{||\mathbf{d}_{ij}||\sin\phi}{\sin\theta} =
     \frac{||\mathbf{d}_{ij}\times\mathbf{a}_i||}{||\mathbf{a}_i\times\mathbf{a}_j||},
@@ -153,13 +150,13 @@ Before the update, the measurement noise was not correlated with either the stat
 
 \subsection{The optimal solution}
 
-In \cite{absolute-triangulation}, they propose the formalization of the MLE optimization problem that minimizes $\boldsymbol{\epsilon}$ by variable $\mathbf{p}_n^f$ as:
+In~\cite{absolute-triangulation}, they propose the formalization of the MLE optimization problem that minimizes $\boldsymbol{\epsilon}$ by variable $\mathbf{p}_n^f$ as:
 \begin{equation}
     \min J(\mathbf{p}_n^f)=\sum_{i=1}^n\boldsymbol{\epsilon}_i^T\mathbf{P}_{\epsilon_i}^{-1}\boldsymbol{\epsilon}_i
     \label{eq:minproblem}
 \end{equation}
 
-Since $\mathbf{P}_{\epsilon_i}$ is always rank deficient due to skew-matrices involved in its calculation and also the pixel error is only 2-D, henceforth the approximation $\mathbf{P}_{\epsilon_i}^{-1}\rightarrow\mathbf{P}_{\epsilon_i}^{+}$ will be used, where $^+$ denotes the Moore-Penrose inverse \cite{moorepenrose}. Returning to \eqref{eq:minproblem}, the next step is to substitute \eqref{eq:dlt} in, then rearranging terms consisting $\mathbf{p}_n^f$ and neglecting those are not consist $\mathbf{p}_n^f$ the cost function to minimize:
+Since $\mathbf{P}_{\epsilon_i}$ is always rank deficient due to skew-matrices involved in its calculation and also the pixel error is only 2-D, henceforth the approximation $\mathbf{P}_{\epsilon_i}^{-1}\rightarrow\mathbf{P}_{\epsilon_i}^{+}$ will be used, where $^+$ denotes the Moore-Penrose inverse~\cite{moorepenrose}. Returning to~\eqref{eq:minproblem}, the next step is to substitute~\eqref{eq:dlt} in, then rearranging terms consisting $\mathbf{p}_n^f$ and neglecting those are not consist $\mathbf{p}_n^f$ the cost function to minimize:
 
 \begin{equation}
 \begin{aligned}
@@ -170,7 +167,7 @@ Since $\mathbf{P}_{\epsilon_i}$ is always rank deficient due to skew-matrices in
         \mathbf{u}_i
     \end{bmatrix}_\times
     \mathbf{R}_{CB}(\mathbf{R}_{BN, i}\mathbf{p}_{n, i}^b + \mathbf{p}_b^c) \\ &
-     + \left(\sum_{i=1}^n(\mathbf{R}_{BN, i}\mathbf{p}_{n, i}^b + \mathbf{p}_b^c)^T\mathbf{R}_{BC}
+     + \left(\sum_{i=1}^n{(\mathbf{R}_{BN, i}\mathbf{p}_{n, i}^b + \mathbf{p}_b^c)}^T\mathbf{R}_{BC}
     \begin{bmatrix}
         \mathbf{u}_i
     \end{bmatrix}_\times \mathbf{P}_{\epsilon_i}^{+}
@@ -182,7 +179,7 @@ Since $\mathbf{P}_{\epsilon_i}$ is always rank deficient due to skew-matrices in
 \label{eq:costfunc}
 \end{equation}
 
-Minimisation can be performed applying the $1^{st}$ differential condition on \eqref{eq:costfunc} that yields:
+Minimisation can be performed applying the $1^{st}$ differential condition on~\eqref{eq:costfunc} that yields:
 \begin{equation}
 \begin{aligned}
     & \frac{\partial\min J(\mathbf{p}_n^f)}{\partial\mathbf{p}_n^f} = \\ & -2\sum_{i=1}^n\mathbf{R}_{NC, i}\begin{bmatrix}
@@ -212,11 +209,11 @@ Rearranging the terms, the following linear equation system has to be solved:
 
 \subsection{Practical formalization of the estimator}
 
-The usual approach for solving least squares systems is to avoid the explicit formalization of the normal equations, and instead solve \eqref{eq:pnfeq} with an alternative technique such as solving it through factorization \cite{matrixcomputations}. 
+The usual approach for solving least squares systems is to avoid the explicit formalization of the normal equations, and instead solve~\eqref{eq:pnfeq} with an alternative technique such as solving it through factorization~\cite{matrixcomputations}. 
 
-Since the weighting matrix $\mathbf{P}_{\epsilon_i}^{+}$ is calculated from a covariance matrix which is positive semi-definite, therefore it has real non-negative eigenvalues and real eigenvectors. With the help of eigendecomposition \cite{matrixtheory}, $\mathbf{P}_{\epsilon_i}^{+}$ can be factorized as $\mathbf{P}_{\epsilon_i}^{+}=\mathbf{V}_i\mathbf{D}_i\mathbf{V}_i^T = (\mathbf{V}_i\sqrt{\mathbf{D}_i})(\mathbf{V}_i\sqrt{\mathbf{D}_i})^T = \mathbf{B}_i\mathbf{B}_i^T$.
+Since the weighting matrix $\mathbf{P}_{\epsilon_i}^{+}$ is calculated from a covariance matrix which is positive semi-definite, therefore it has real non-negative eigenvalues and real eigenvectors. With the help of eigendecomposition~\cite{matrixtheory}, $\mathbf{P}_{\epsilon_i}^{+}$ can be factorized as $\mathbf{P}_{\epsilon_i}^{+}=\mathbf{V}_i\mathbf{D}_i\mathbf{V}_i^T = (\mathbf{V}_i\sqrt{\mathbf{D}_i}){(\mathbf{V}_i\sqrt{\mathbf{D}_i})}^T = \mathbf{B}_i\mathbf{B}_i^T$.
 
-Decomposing \eqref{eq:pnfeq} with notation $\mathbf{A}_i=\mathbf{B}_i^T\begin{bmatrix} \mathbf{u}_i \end{bmatrix}_\times\mathbf{R}_{CN, i}$ it yields:
+Decomposing~\eqref{eq:pnfeq} with notation $\mathbf{A}_i=\mathbf{B}_i^T\begin{bmatrix} \mathbf{u}_i \end{bmatrix}_\times\mathbf{R}_{CN, i}$ it yields:
 \begin{equation}
     \overbrace{
     \begin{bmatrix}
@@ -242,7 +239,7 @@ The above equation must be solved in least squares terms, which means the estima
 As a result of statistically optimal weighting the estimator covariance can be computed as:
 
 \begin{equation}
-    \mathbf{P}_{f} = \left(\sum_{i=1}^n \mathbf{A}_i^T\mathbf{A}_i\right)^{-1}
+    \mathbf{P}_{f} = {\left(\sum_{i=1}^n \mathbf{A}_i^T\mathbf{A}_i\right)}^{-1}
     \label{eq:covest}
 \end{equation}
 
@@ -250,12 +247,12 @@ It is worth mentioning that $\mathbf{A}_i^T\mathbf{A}_i$ matrices are rank defic
 
 \section{The recursive version}
 
-An additional advantage of decomposing the linear system is that the estimator takes the form of a general LS solution, for which the recursive version is easy to find. Initially, let's formalize the estimation until the $i^{th}$ estimation based on \eqref{eq:decomposed-linsys} and \eqref{eq:estimator}:
+An additional advantage of decomposing the linear system is that the estimator takes the form of a general LS solution, for which the recursive version is easy to find. Initially, let's formalize the estimation until the $i^{th}$ estimation based on~\eqref{eq:decomposed-linsys} and~\eqref{eq:estimator}:
 \begin{equation}
-    \hat{\mathbf{p}}_{n, i}^f=\left(\sum_{i}\mathbf{A}_i^T\mathbf{A}_i\right)^{-1}\left(\sum_i\mathbf{A}_i^T\mathbf{y}_i\right) = \mathbf{P}_{f, i}\mathbf{b}_i,
+    \hat{\mathbf{p}}_{n, i}^f={\left(\sum_{i}\mathbf{A}_i^T\mathbf{A}_i\right)}^{-1}\left(\sum_i\mathbf{A}_i^T\mathbf{y}_i\right) = \mathbf{P}_{f, i}\mathbf{b}_i,
 \end{equation}
 
-note that $\mathbf{b}_i=\mathbf{P}_{f, i}^{-1}\hat{\mathbf{p}}_{n, i}^f$. Then the $(i+1)^{th}$ estimation is:
+note that $\mathbf{b}_i=\mathbf{P}_{f, i}^{-1}\hat{\mathbf{p}}_{n, i}^f$. Then the ${(i+1)}^{th}$ estimation is:
 \begin{equation}
 \begin{aligned}
     \hat{\mathbf{p}}_{n, i+1}^f &= \mathbf{P}_{f, i+1}\left(\mathbf{b}_i + \mathbf{A}_{i+1}^T \mathbf{y}_{i+1}\right) \\ &=
@@ -265,7 +262,7 @@ note that $\mathbf{b}_i=\mathbf{P}_{f, i}^{-1}\hat{\mathbf{p}}_{n, i}^f$. Then t
 \end{aligned}
 \end{equation}
 
-where $\mathbf{A}_{i+1}$ and $\mathbf{y}_{i+1}$ can be calculated from new data, and the covariance matrix can be propagated based on \eqref{eq:covest}:
+where $\mathbf{A}_{i+1}$ and $\mathbf{y}_{i+1}$ can be calculated from new data, and the covariance matrix can be propagated based on~\eqref{eq:covest}:
 \begin{equation}
-     \mathbf{P}_{f, i+1} = \left((\mathbf{P}_{f, i})^{-1}+\mathbf{A}_{i+1}^T\mathbf{A}_{i+1}\right)^{-1}
+     \mathbf{P}_{f, i+1} = {\left({(\mathbf{P}_{f, i})}^{-1}+\mathbf{A}_{i+1}^T\mathbf{A}_{i+1}\right)}^{-1}
 \end{equation}

@@ -8,3 +8,6 @@
 *.thm
 *.toc
 svg-inkscape/
+thesis.fls
+thesis.fdb_latexmk
+.chktexrc

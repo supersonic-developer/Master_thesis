@@ -6,11 +6,11 @@
 \newcommand{\vikszerzoVezeteknev}{Novozánszki}
 \newcommand{\vikszerzoKeresztnev}{Zsombor}
 
-\newcommand{\vikkonzulensAMegszolitas}{Dr. }
+\newcommand{\vikkonzulensAMegszolitas}{Dr.}
 \newcommand{\vikkonzulensAVezeteknev}{Szádeczky-Kardoss Gincsainé}
 \newcommand{\vikkonzulensAKeresztnev}{Emese}
 
-\newcommand{\vikkonzulensBMegszolitas}{Dr. }
+\newcommand{\vikkonzulensBMegszolitas}{Dr.}
 \newcommand{\vikkonzulensBVezeteknev}{Bauer}
 \newcommand{\vikkonzulensBKeresztnev}{Péter}
 
@@ -33,7 +33,7 @@
 %--------------------------------------------------------------------------------------
 \begin{document}
 
-\selectthesislanguage
+\selectthesislanguage%
 
 %----------------------------------- Title page ---------------------------------------
 \include{include/titlepage}		   
@@ -74,12 +74,12 @@
 \begingroup
 \let\clearpage\relax
 
-\phantomsection
+\phantomsection%
 \addcontentsline{toc}{chapter}{\listfigurename}
 \listoffigures
 
 \clearpage
-\phantomsection
+\phantomsection%
 \addcontentsline{toc}{chapter}{\listtablename}
 \listoftables
 
@@ -97,7 +97,7 @@
 % Bibliography
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 \clearpage
-\phantomsection
+\phantomsection%
 \addcontentsline{toc}{chapter}{\bibname}
 \bibliography{bib/mybib}
 \end{document}

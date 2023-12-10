@@ -1,15 +1,14 @@
-\chapter{Synergizing LOST and ESKF for robust navigation}
-\label{chap:integration}
+\chapter{Synergizing LOST and ESKF for robust navigation}\label{chap:integration}
 
 In the previous two chapters, the applied filter technique and triangulation approach were introduced, and now the focus shifts toward the integration of the two methods. This integration process will begin by examining the impact on the Kalman gain, a crucial component in the navigation system. Furthermore, the discussion extends to the role of cross-covariances in the process of integration.
 
 \section{The modified Kalman gain}
 
-The derivation of the Kalman gain is based on \cite{discrete_kalman_tutorial}, but adopted to the implemented system. Firstly, the integration affects the Kalman gain because forming the residual involves both the triangulated feature position and the filter state. Previously, only the uncertainty of the state was considered, but as soon as the true values of the 3-D feature position are not known, then its uncertainty should be taken into account too.
+The derivation of the Kalman gain is based on~\cite{discrete_kalman_tutorial}, but adopted to the implemented system. Firstly, the integration affects the Kalman gain because forming the residual involves both the triangulated feature position and the filter state. Previously, only the uncertainty of the state was considered, but as soon as the true values of the 3-D feature position are not known, then its uncertainty should be taken into account too.
 
 \subsection{The error propagation from measurement to measurement}
 
-Taking a look at the error model on \eqref{eq:error-state-dyn} and the propagation equations on \eqref{eq:err-state-dyn} and \eqref{eq:err-cov-prop}, the error state is propagated from a posterior state to the next update as:
+Taking a look at the error model on~\eqref{eq:error-state-dyn} and the propagation equations on~\eqref{eq:err-state-dyn} and~\eqref{eq:err-cov-prop}, the error state is propagated from a posterior state to the next update as:
 \begin{equation}
 \begin{aligned}
     \delta\mathbf{x}_{k+N}^- &= \left(\prod_{j=0}^{N-1}\mathbf{F}_{x,k+j}\right)\delta\mathbf{x}_k^- + \left[\sum_{j=0}^{N-1}\left(\prod_{l=j+1}^{N-1}\mathbf{F}_{x,k+l} \right) \mathbf{F}_{i,k+j} \mathbf{i}_{k+j}\right] \\ &= \mathbf{PF}_x^N\delta\mathbf{x}_k^- + \mathbf{SF}_i^N \mathbf{i} 
@@ -21,7 +20,7 @@ The significant insight gleaned from the aforementioned equations is that error 
 
 \subsection{The measurement model}
 
-The actual measurement is produced by h(.) non-linear function and the true value of the state and feature that leads to:
+The actual measurement is produced by h (.) non-linear function and the true value of the state and feature that leads to:
 \begin{equation}
     \mathbf{z}_{k+N} = h(\mathbf{x}_{t,k+N},\mathbf{p}_{n,t}^f)
 \end{equation}
@@ -30,7 +29,7 @@ To form the residual, the measurements have to be predicted and it's done based 
 \begin{equation}
     \hat{\mathbf{z}}_{k+N} = h(\mathbf{x}_{k+N},\mathbf{p}_{n}^f) + \mathbf{H}_{x,k+N}\delta\mathbf{x}_{k+N}+\mathbf{H}_{f, k+N}\delta\mathbf{p}_{n}^f + \delta\mathbf{u}_{k+N}, 
 \end{equation}
-where one part relates to the non-linear projection h(.) onto the nominal state and another is connected to the linearised error models. $\mathbf{H}_{f,k+N}$ is the pixel measurement Jacobian by the feature that can be calculated by taking the derivative of \eqref{eq:feature-in-cam}, that yields:
+where one part relates to the non-linear projection h (.) onto the nominal state and another is connected to the linearised error models. $\mathbf{H}_{f,k+N}$ is the pixel measurement Jacobian by the feature that can be calculated by taking the derivative of~\eqref{eq:feature-in-cam}, that yields:
 \begin{equation}
     \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{p}_n^f}=\mathbf{R}_{CN}
 \end{equation}
@@ -78,16 +77,16 @@ Rearranging the terms for $\mathbf{K}$:
     \mathbf{K}=\mathbf{E}\mathbf{D}^{-1}
 \end{equation}
 
-Details about the result of the derivative can be found in \cite{discrete_kalman_tutorial}.
+Details about the result of the derivative can be found in~\cite{discrete_kalman_tutorial}.
 
 \section{Cross-covariance estimation}
 
-The method for cross-covariance modeling is utilized from \cite{oliver2003gaussian}, called Gaussian cosimulation. This method foundation is that a p-dimensional vector $\mathbf{y}$ is multivariate normal with rank m, mean $\boldsymbol{\mu}$ and covariance $\mathbf{P}$, then:
+The method for cross-covariance modeling is utilized from~\cite{oliver2003gaussian}, called Gaussian cosimulation. This method foundation is that a p-dimensional vector $\mathbf{y}$ is multivariate normal with rank m, mean $\boldsymbol{\mu}$ and covariance $\mathbf{P}$, then:
 \begin{equation}
     \mathbf{y}=\boldsymbol{\mu} + \mathbf{L}\mathbf{z}, \quad \mathbf{P}=\mathbf{L}\mathbf{L}^T,
 \end{equation}
 
-where $\mathbf{L}\in\mathbb{R}^{p\times m}$ matrix of rank m and $\mathbf{z}$ is a vector m independent identically distributed standard normal variable \cite{rao}. Both \cite{Alabert1987, Davis1987} propose the usage of the LU decomposition for conditional simulations, which results in simulating Gaussian random fields. In my work, I employ a similar approach by calculating the square root decomposition of covariance matrices to efficiently create cross-covariance models, maintaining simplicity, flexibility, and computational efficiency in the process.
+where $\mathbf{L}\in\mathbb{R}^{p\times m}$ matrix of rank m and $\mathbf{z}$ is a vector m independent identically distributed standard normal variable~\cite{rao}. Both~\cite{Alabert1987, Davis1987} propose the usage of the LU decomposition for conditional simulations, which results in simulating Gaussian random fields. In my work, I employ a similar approach by calculating the square root decomposition of covariance matrices to efficiently create cross-covariance models, maintaining simplicity, flexibility, and computational efficiency in the process.
 
 The method introduces two correlated random Gaussian vectors $\mathbf{y}_1$ and $\mathbf{y}_2$ with $\rho$ correlation:
 \begin{equation}
@@ -97,15 +96,15 @@ The method introduces two correlated random Gaussian vectors $\mathbf{y}_1$ and 
 \end{aligned}
 \end{equation}
 
-The covariance matrices of the vectors are $E\{(\mathbf{y}_1-\boldsymbol{\mu}_1)(\mathbf{y}_1-\boldsymbol{\mu}_1)^T\}=\mathbf{L}_1\mathbf{L}_1^T$ and $E\{(\mathbf{y}_2-\boldsymbol{\mu}_2)(\mathbf{y}_2-\boldsymbol{\mu}_2)^T\}=\mathbf{L}_2\mathbf{L}_2^T$, that utilizes $\mathbf{z}_1$ and $\mathbf{z}_2$ are zero-mean standard Gaussian distributed vectors, therefore $E\{\mathbf{z}_1\mathbf{z}_1^T\}, E\{\mathbf{z}_2\mathbf{z}_2^T\}=\mathbf{I}$ and $E\{\mathbf{z}_1\mathbf{z}_2^T\}, E\{\mathbf{z}_2\mathbf{z}_1^T\}=\mathbf{0}$. Then the cross-covariance:
+The covariance matrices of the vectors are $E\{(\mathbf{y}_1-\boldsymbol{\mu}_1){(\mathbf{y}_1-\boldsymbol{\mu}_1)}^T\}=\mathbf{L}_1\mathbf{L}_1^T$ and $E\{(\mathbf{y}_2-\boldsymbol{\mu}_2){(\mathbf{y}_2-\boldsymbol{\mu}_2)}^T\}=\mathbf{L}_2\mathbf{L}_2^T$, that utilizes $\mathbf{z}_1$ and $\mathbf{z}_2$ are zero-mean standard Gaussian distributed vectors, therefore $E\{\mathbf{z}_1\mathbf{z}_1^T\}, E\{\mathbf{z}_2{\mathbf{z}_2}^T\}=\mathbf{I}$ and $E\{\mathbf{z}_1\mathbf{z}_2^T\}, E\{\mathbf{z}_2\mathbf{z}_1^T\}=\mathbf{0}$. Then the cross-covariance:
 \begin{equation}
 \begin{aligned}    
-    E\{(\mathbf{y}_1-\boldsymbol{\mu}_1)(\mathbf{y}_2-\boldsymbol{\mu}_2)^T\}&=E\{\mathbf{L}_1\mathbf{z}_1(\rho\mathbf{z}_1^T\mathbf{L}_2^T+\sqrt{1-\rho^2}\mathbf{z}_2^T\mathbf{L}_2^T)\} \\ &=
+    E\{(\mathbf{y}_1-\boldsymbol{\mu}_1){(\mathbf{y}_2-\boldsymbol{\mu}_2)}^T\}&=E\{\mathbf{L}_1\mathbf{z}_1(\rho\mathbf{z}_1^T\mathbf{L}_2^T+\sqrt{1-\rho^2}\mathbf{z}_2^T\mathbf{L}_2^T)\} \\ &=
     \rho\mathbf{L}_1 E\{\mathbf{z}_1\mathbf{z}_1^T\}\mathbf{L}_2^T+\sqrt{1-\rho^2}\mathbf{L}_1E\{\mathbf{z}_1\mathbf{z}_2^T\}\mathbf{L}_2^T \\ &=
     \rho\mathbf{L}_1\mathbf{L}_2
 \end{aligned}
 \end{equation}
 
-Now, $\rho\in[0;1]$ is a tuneable parameter that determines the strength of the correlation between Gaussian distributed vectors, but $\mathbf{L}_1$ and $\mathbf{L}_2$ should be determined as the square root of the actual covariance matrices. It can be always done because covariance matrices are positive semi-definite. The procedure is the same as in \eqref{eq:decomposed-linsys} where the LOST equations were square root decomposed.
+Now, $\rho\in[0;1]$ is a tuneable parameter that determines the strength of the correlation between Gaussian distributed vectors, but $\mathbf{L}_1$ and $\mathbf{L}_2$ should be determined as the square root of the actual covariance matrices. It can be always done because covariance matrices are positive semi-definite. The procedure is the same as in~\eqref{eq:decomposed-linsys} where the LOST equations were square root decomposed.
 
 The state and the feature covariances are defined as Gaussian fields with different dimensions, therefore the covariance decomposition is applied to covariances existing in the pixel space, and the decomposed covariance matrices are $\mathbf{H}_x\mathbf{P}_x^-\mathbf{H}_x^T$ and $\mathbf{H}_f\mathbf{P}_f\mathbf{H}_f^T$.

@@ -1,5 +1,4 @@
-\chapter{Development}
-\label{chap:dev}
+\chapter{Development}\label{chap:dev}
 
 In this chapter, I delve into the intricate construction of the simulation environment, unveiling the tools employed and the nuanced calibration of parameters essential to its functionality. The selected tools will be introduced that serve as the bedrock for the experimental framework. This section sheds light on the nuanced decisions made to improve the simulation's fidelity and optimize the filter's performance. 
 
@@ -11,54 +10,53 @@ During the development, I had to integrate a filter into the simulation, which i
 
 \section{Noise calibration}
 
-The system required setting five different noise values. Four of them are connected to process noise that was defined in \eqref{eq:noises}, and one of them models the visual measurement error $\sigma_u$. The measurement noises $\sigma_{\eta_\omega}$ and $\sigma_{\eta_a}$ are usually given as rate density in IMU datasheets, which is a sampling frequency-dependent quantity, therefore, their unit of measurement is $\si{\frac{\circ}{\second\sqrt{\hertz}}}$ and $\si{\frac{\micro g}{\sqrt{\hertz}}}$, where $1\si{\micro g}=9.81\si{\frac{\meter}{\second\squared}}\cdot 10^{-6}$. The change of biases over time are temperature-dependent parameters, but the current solution doesn't take into account this impact, therefore their value was chosen for a small value. The exact dispersion parameters are presented in Table \ref{tab:noises} and were calculated for 50\si{\hertz} sampling frequency.
+The system required setting five different noise values. Four of them are connected to process noise that was defined in~\eqref{eq:noises}, and one of them models the visual measurement error $\sigma_u$. The measurement noises $\sigma_{\eta_\omega}$ and $\sigma_{\eta_a}$ are usually given as rate density in IMU datasheets, which is a sampling frequency-dependent quantity, therefore, their unit of measurement is $\si{\frac{\circ}{\second\sqrt{\hertz}}}$ and $\si{\frac{\micro g}{\sqrt{\hertz}}}$, where $1\si{\micro g}=9.81\si{\frac{\meter}{\second\squared}}\cdot 10^{-6}$. The change of biases over time are temperature-dependent parameters, but the current solution doesn't take into account this impact, therefore their value was chosen for a small value. The exact dispersion parameters are presented in Table~\ref{tab:noises} and were calculated for 50\si{\hertz} sampling frequency.
 
 \begin{table}[!ht]
     \centering
-    \begin{tabular}{l|c|c|c}
-         Name & Notation & Value & UoM \\ \hline
+    \begin{tabular}{l c c c}
+         Name & Notation & Value & UoM \\ 
+         \toprule
          Angular velocity measurement noise & $\sigma_{\eta_\omega}$ & $0.1\cdot\sqrt{50}\approx 0.707$ & $\si{\frac{\circ}{\second}}$ \\
          Acceleration measurement noise & $\sigma_{\eta_a}$ & $1\cdot\sqrt{50}=7.07$ & $\si{\milli g}$ \\
          Accelerometer bias variation & $\sigma_{\eta_{\beta_a}}$ & $10^{-6}$ & $\si{\frac{\meter}{\second\squared\sqrt{\hertz}}}$ \\
          Gyroscope bias variation & $\sigma_{\eta_{\beta_\omega}}$ & $10^{-7}$ & $\si{\frac{\radian}{\second\sqrt{\hertz}}}$ \\
          Camera measurement noise & $\sigma_u$ & 0.7 & \si{px}
     \end{tabular}
-    \caption{Noise summary}
-    \label{tab:noises}
+    \caption{Noise summary}\label{tab:noises}
 \end{table}
 
 \section{Camera configuration}
 
-For simulation purposes, I utilized the intrinsic parameters of a Basler camera, and its parameters are presented in table \ref{tab:cam-intrinsic}.
+For simulation purposes, I utilized the intrinsic parameters of a Basler camera, and its parameters are presented in table~\ref{tab:cam-intrinsic}.
 \begin{table}[!ht]
     \centering
-    \begin{tabular}{l|c|c}
-         Name & Notation & Value [px] \\ \hline
+    \begin{tabular}{l c c}
+         Name & Notation & Value [px] \\ 
+         \toprule
          Focal length & $f$ &  1177.5 \\
          Principal point X & $p_x$ & 1024 \\
          Principal point Y & $p_y$ & 768 \\
          Image width & $W$ & 2048 \\
          Image height & $H$ & 1536
     \end{tabular}
-    \caption{Camera intrinsic parameters}
-    \label{tab:cam-intrinsic}
+    \caption{Camera intrinsic parameters}\label{tab:cam-intrinsic}
 \end{table}
 
 \subsection{Feature point selection}
 
 The feature point selection is a crucial part of the algorithm and may have the most potential to improve. It is not exactly just a camera configuration because this impacts the whole algorithm's performance and schedule. The feature points have to be chosen carefully because a good choice can maintain the stability of the system for a longer period.
 
-In \cite{image-based-INS}, it was proposed in VIO systems choosing features from the edge of the image can be beneficial, since the pixel coordinates are moving the most near the edges. That phenomenon is related to the optical flow equations that describe the derivatives of the pixel coordinates. In \cite{optic-flow}, the optical flow equations were presented in (1) and it shows that the derivative of image coordinates depends on the image coordinates either at the first or higher order, thus the values of the derivatives increase as the image coordinates increase. Important to emphasize in this context we talk about the principal point compensated measurements, therefore the (0,0) image coordinate is near to the center of the image.
+In~\cite{image-based-INS}, it was proposed in VIO systems choosing features from the edge of the image can be beneficial, since the pixel coordinates are moving the most near the edges. That phenomenon is related to the optical flow equations that describe the derivatives of the pixel coordinates. In~\cite{optic-flow}, the optical flow equations were presented in (1) and it shows that the derivative of image coordinates depends on the image coordinates either at the first or higher order, thus the values of the derivatives increase as the image coordinates increase. Important to emphasize in this context we talk about the principal point compensated measurements, therefore the (0,0) image coordinate is near to the center of the image.
 
-In \cite{rel-nav}, they claim their monocular VIO system performance degrades when the aircraft flies straight and level due to velocity being less observable for a monocular VIO, and it could also relate to the fact during straight and level flight the tracked features move less on the image plane.
+In~\cite{rel-nav}, they claim their monocular VIO system performance degrades when the aircraft flies straight and level due to velocity being less observable for a monocular VIO, and it could also relate to the fact during straight and level flight the tracked features move less on the image plane.
 
-To sum up, it has the beneficial properties of choosing features from the edge of the image, but the current algorithm combines the results of two estimators (EKSF and LOST) therefore it's very important to keep estimations near to their real value. If features are visible for only a short period the LOST algorithm is not able to produce high-quality estimates which leads to fewer updates on the state, and we are caught in a vicious circle. In the current solution, I select feature points in the area inward from the edge of the image for example in Figure \ref{fig:camera-image}.
+To sum up, it has the beneficial properties of choosing features from the edge of the image, but the current algorithm combines the results of two estimators (EKSF and LOST) therefore it's very important to keep estimations near to their real value. If features are visible for only a short period the LOST algorithm is not able to produce high-quality estimates which leads to fewer updates on the state, and we are caught in a vicious circle. In the current solution, I select feature points in the area inward from the edge of the image for example in Figure~\ref{fig:camera-image}.
 
 \begin{figure}[!ht]
     \centering
     \includesvg[width=0.9\textwidth, inkscapelatex=false]{figures/camera-image}
-    \caption{Camera image example}
-    \label{fig:camera-image}
+    \caption{Camera image example}\label{fig:camera-image}
 \end{figure}
 
 When the algorithm starts it selects 18 features equally distributed from the inward area. After initialization, if a tracked feature leaves the image, a new one will be selected so that it is furthest away from the other tracks. It's advantageous because it provides equal distribution concerning the image, and the independent measurement noise assumption is more accurate. Furthermore, this approach keeps a configurable zone inward from the image edges therefore the features are visible for a longer period.
@@ -69,113 +67,107 @@ Once the parameters have been configured, only the flight trajectory needs to be
 
 \subsection{Straight and level flight path}
 
-The actual and estimated flight trajectory considering only 2-D position is shown in Figure \ref{fig:straight-level} and related estimations below.
+The actual and estimated flight trajectory considering only 2-D position is shown in Figure~\ref{fig:straight-level} and related estimations below.
 
 \begin{figure}[!ht]
     \centering
     \includesvg[width=0.6\textwidth, inkscapelatex=false]{figures/straight-level/straight-level}
-    \caption{Straight and level flight path}
-    \label{fig:straight-level}
+    \caption{Straight and level flight path}\label{fig:straight-level}
 \end{figure}
 
 \begin{figure}[!ht]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/X}
-        \caption{Straight and level - X}
+        \caption{Straight and level---X}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/Y}
-        \caption{Straight and level - Y}
+        \caption{Straight and level---Y}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/Z}
-        \caption{Straight and level - Z}
+        \caption{Straight and level---Z}
     \end{subfigure}
-    \caption{Straight and level - position}
-    \label{fig:straight-level-pos}
+    \caption{Straight and level---position}\label{fig:straight-level-pos}
 \end{figure}
 
 \begin{figure}[!ht]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/roll}
-        \caption{Straight and level - roll}
+        \caption{Straight and level---roll}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/pitch}
-        \caption{Straight and level - pitch}
+        \caption{Straight and level---pitch}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/yaw}
-        \caption{Straight and level - yaw}
+        \caption{Straight and level---yaw}
     \end{subfigure}
-    \caption{Straight and level - orientation}
-    \label{fig:straight-level-ori}
+    \caption{Straight and level---orientation}\label{fig:straight-level-ori}
 \end{figure}
 
 \begin{figure}[!ht]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/vbx}
-        \caption{Straight and level - $v_{b,x}$}
+        \caption{Straight and level---$v_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/vby}
-        \caption{Straight and level - $v_{b,y}$}
+        \caption{Straight and level---$v_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/vbz}
-        \caption{Straight and level - $v_{b,z}$}
+        \caption{Straight and level---$v_{b,z}$}
     \end{subfigure}
-    \caption{Straight and level - velocity}
-    \label{fig:straight-level-vel}
+    \caption{Straight and level---velocity}\label{fig:straight-level-vel}
 \end{figure}
 
 \begin{figure}[!ht]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/abx}
-        \caption{Straight and level - $a_{b,x}$}
+        \caption{Straight and level---$a_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/aby}
-        \caption{Straight and level - $a_{b,y}$}
+        \caption{Straight and level---$a_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/abz}
-        \caption{Straight and level - $a_{b,z}$}
+        \caption{Straight and level---$a_{b,z}$}
     \end{subfigure}
-    \caption{Straight and level - acceleration bias}
-    \label{fig:straight-level-abias}
+    \caption{Straight and level---acceleration bias}\label{fig:straight-level-abias}
 \end{figure}
 
 \begin{figure}[!ht]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/wbx}
-        \caption{Straight and level - $\omega_{b,x}$}
+        \caption{Straight and level---$\omega_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/wby}
-        \caption{Straight and level - $\omega_{b,y}$}
+        \caption{Straight and level---$\omega_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/wbz}
-        \caption{Straight and level - $\omega_{b,z}$}
+        \caption{Straight and level---$\omega_{b,z}$}
     \end{subfigure}
-    \caption{Straight and level - angular velocity bias}
-    \label{fig:straight-level-wbias}
+    \caption{Straight and level---angular velocity bias}\label{fig:straight-level-wbias}
 \end{figure}
 
 Summarizing, the charts show that
