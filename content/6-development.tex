@@ -78,7 +78,7 @@ A tracked feature is included in the ESKF measurement update if the square root 
 
 \subsection{Straight and level flight path}
 
-The actual and estimated flight trajectory considering only 2-D position is shown in Figure~\ref{fig:straight-level} and related estimations below.
+The actual and estimated flight trajectory considering only 2-D position (X-Y plane) is shown in Figure~\ref{fig:straight-level} and the accumulated error as a function of the distance travelled in Figure~\ref{fig:straight-level-error}.
 
 \begin{figure}[H]
     \centering
@@ -187,10 +187,11 @@ The actual and estimated flight trajectory considering only 2-D position is show
     \caption{Straight and level path---angular velocity bias}\label{fig:straight-level-wbias}
 \end{figure}
 
-Summarizing, the charts show that
-
+In summary, the charts show that in the case of straight and level flight, the developed algorithm performs quite well. The accumulated 2-D error remains under 1\% of the travelled distance at the end of the simulation. The estimates remain close to the true values for the whole simulation. I want to emphasize that at the beginning of the simulation, the position, orientation and velocity are not estimated well, but this is not surprising because the LOST estimates have not converged sufficiently until, furthermore, the biases are far away from their true values. After the LOST estimates and the biases have converged the ESKF estimates return close to the true values and remain there.
 
 \subsection{Straight and descending flight path}
+
+In the case of straight and descending flight trajectory, the estimated and the actual 2-D position is shown in Figure~\ref{fig:straight-descending} and the accumulated error as a function of the distance travelled in Figure~\ref{fig:straight-descending-error}. In this simulation setup, I set a flight path where the aircraft descended 10\si{\meter} after every travelled 200\si{\meter}. 
 
 \begin{figure}[H]
     \centering
@@ -207,17 +208,17 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/X}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/X-2}
         \caption{Straight and descending path---X}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/Y}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/Y-2}
         \caption{Straight and descending path---Y}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/Z}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/Z-2}
         \caption{Straight and descending path---Z}
     \end{subfigure}
     \caption{Straight and descending path---position}\label{fig:straight-descending-pos}
@@ -226,17 +227,17 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/roll}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/roll-2}
         \caption{Straight and descending path---roll}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/pitch}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/pitch-2}
         \caption{Straight and descending path---pitch}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/yaw}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/yaw-2}
         \caption{Straight and descending path---yaw}
     \end{subfigure}
     \caption{Straight and descending path---Euler angles}\label{fig:straight-descending-euler}
@@ -245,17 +246,17 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vbx}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vbx-2}
         \caption{Straight and descending path---$v_x$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vby}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vby-2}
         \caption{Straight and descending path---$v_y$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vbz}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vbz-2}
         \caption{Straight and descending path---$v_z$}
     \end{subfigure}
     \caption{Straight and descending path---velocity}\label{fig:straight-descending-vel}
@@ -264,17 +265,17 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/abx}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/abx-2}
         \caption{Straight and descending path---$a_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/aby}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/aby-2}
         \caption{Straight and descending path---$a_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/abz}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/abz-2}
         \caption{Straight and descending path---$a_{b,z}$}
     \end{subfigure}
     \caption{Straight and descending path---acceleration bias}\label{fig:straight-descending-abias}
@@ -283,24 +284,27 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wbx}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wbx-2}
         \caption{Straight and descending path---$\omega_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wby}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wby-2}
         \caption{Straight and descending path---$\omega_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wbz}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wbz-2}
         \caption{Straight and descending path---$\omega_{b,z}$}
     \end{subfigure}
     \caption{Straight and descending path---angular velocity bias}\label{fig:straight-descending-wbias}
 \end{figure}
 
+In brief, the algorithm performed also well in the case of the straight and descending flight path. The accumulated 2-D error remains under 2\% of the travelled distance at the end of the simulation. At the beginning of the simulation, the experience is the same as in the case of the straight and level flight path. Remarkably, the Y, roll, yaw and the Y component of the velocity start to degrade around 80\si{\second}.
 
 \subsection{Zig-zag flight path}
+
+In the case of zig-zag and descending flight trajectory, the estimated and the actual 2-D position is shown in Figure~\ref{fig:straight-descending} and the accumulated error as a function of the distance travelled in Figure~\ref{fig:straight-descending-error}. In this simulation setup, I set a flight path where the aircraft went between -50\si{\meter} and 50\si{\meter} in the Y direction at every travelled 300\si{\meter} along the X axis.
 
 \begin{figure}[H]
     \centering
@@ -317,17 +321,17 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/X}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/X-3}
         \caption{Zig-zag and level path---X}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/Y}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/Y-3}
         \caption{Zig-zag and level path---Y}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/Z}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/Z-3}
         \caption{Zig-zag and level path---Z}
     \end{subfigure}
     \caption{Zig-zag and level path---position}\label{fig:zig-zag-level-pos}
@@ -336,17 +340,17 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/roll}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/roll-3}
         \caption{Zig-zag and level path---roll}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/pitch}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/pitch-3}
         \caption{Zig-zag and level path---pitch}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/yaw}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/yaw-3}
         \caption{Zig-zag and level path---yaw}
     \end{subfigure}
     \caption{Zig-zag and level path---Euler angles}\label{fig:zig-zag-level-euler}
@@ -355,17 +359,17 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vbx}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vbx-3}
         \caption{Zig-zag and level path---$v_x$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vby}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vby-3}
         \caption{Zig-zag and level path---$v_y$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vbz}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vbz-3}
         \caption{Zig-zag and level path---$v_z$}
     \end{subfigure}
     \caption{Zig-zag and level path---velocity}\label{fig:zig-zag-level-vel}
@@ -374,17 +378,17 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/abx}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/abx-3}
         \caption{Zig-zag and level path---$a_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/aby}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/aby-3}
         \caption{Zig-zag and level path---$a_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/abz}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/abz-3}
         \caption{Zig-zag and level path---$a_{b,z}$}
     \end{subfigure}
     \caption{Zig-zag and level path---acceleration bias}\label{fig:zig-zag-level-abias}
@@ -393,18 +397,188 @@ Summarizing, the charts show that
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wbx}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wbx-3}
         \caption{Zig-zag and level path---$\omega_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wby}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wby-3}
         \caption{Zig-zag and level path---$\omega_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
-        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wbz}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wbz-3}
         \caption{Zig-zag and level path---$\omega_{b,z}$}
     \end{subfigure}
     \caption{Zig-zag and level path---gyroscope bias}\label{fig:zig-zag-level-gbias}
 \end{figure}
+
+To sum up, in this case, the accumulated error is the highest. Probably this is because the aircraft changes its direction regularly therefore the features are visible for a shorter period, than in the previous two cases, but the results are still acceptable. The accumulated 2-D error remains under 3\% of the travelled distance at the end of the simulation. Interestingly, in this case, the Z and the X component of the velocity starts to degrade around 55--70\si{\second}.
+
+\subsection{Synthetic images based simulation}
+
+The synthetic images were generated in the Unreal CARLA simulation environment. The simulation environment is based on the CARLA simulator, which is an open-source simulator for autonomous driving research. In Figure~ref{fig:carla-1} an example is presented of the generated images which illustrate an urban environment. In Figure~\ref{fig:carla-2} an example is shown of the detected corners by the KLT algorithm.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\textwidth]{figures/carla-img-example.png}
+        \caption{Example of a generated image}\label{fig:carla-1}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\textwidth]{figures/carla-img-corner.png}
+        \caption{Example of the detected corners}\label{fig:carla-2}
+    \end{subfigure}
+    \caption{Synthetic images}\label{fig:carla}
+\end{figure}
+
+In this case, the estimated and the actual 2-D position is shown in Figure~\ref{fig:carla-path} and the accumulated error as a function of the distance travelled in Figure~\ref{fig:carla-error}. I want to highlight that in this case, I only had 10\si{\second} of data to run the simulation.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \includesvg[width=0.8\textwidth, inkscapelatex=false]{figures/carla/carla-path}
+        \caption{Flight path of CARLA based}\label{fig:carla-path}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+        \includesvg[width=0.8\textwidth, inkscapelatex=false]{figures/carla/carla-path-error}
+        \caption{Relative error of CARLA based}\label{fig:carla-error}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/X-4}
+        \caption{CARLA based---X}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/Y-4}
+        \caption{CARLA based---Y}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/Z-4}
+        \caption{CARLA based---Z}
+    \end{subfigure}
+    \caption{CARLA based---position}\label{fig:carla-pos}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/roll-4}
+        \caption{CARLA based---roll}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/pitch-4}
+        \caption{CARLA based---pitch}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/yaw-4}
+        \caption{CARLA based---yaw}
+    \end{subfigure}
+    \caption{CARLA based---Euler angles}\label{fig:carla-euler}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/vbx-4}
+        \caption{CARLA based---$v_x$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/vby-4}
+        \caption{CARLA based---$v_y$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/vbz-4}
+        \caption{CARLA based---$v_z$}
+    \end{subfigure}
+    \caption{CARLA based---velocity}\label{fig:carla-vel}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/abx-4}
+        \caption{CARLA based---$a_{b,x}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/aby-4}
+        \caption{CARLA based---$a_{b,y}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/abz-4}
+        \caption{CARLA based---$a_{b,z}$}
+    \end{subfigure}
+    \caption{CARLA based---acceleration bias}\label{fig:carla-abias}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/wbx-4}
+        \caption{CARLA based---$\omega_{b,x}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/wby-4}
+        \caption{CARLA based---$\omega_{b,y}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/carla/wbz-4}
+        \caption{CARLA based---$\omega_{b,z}$}
+    \end{subfigure}
+    \caption{CARLA based---gyroscope bias}\label{fig:carla-gbias}
+\end{figure}
+
+In this case, all of the position and velocity values are degraded significantly through time, but the angles remain close to the true values. It's important to note that this was the first try to use this algorithm with a real image processing algorithm, hence, further developments and improvements are needed to achieve better results. Moreover, the ESKF estimates did not have time to converge, therefore, the results are not as good as in the previous cases. The accumulated 2-D error remains under 6\% of the travelled distance at the end of the simulation.
+
+\subsection{Root mean square error (RMSE)} 
+
+RMSE is a commonly used metric for evaluating the performance of regression models or estimating the quality of predictions. It is a remarkable approach to formalize and numerically express the error between ideal $a$ and observed $\hat{a}$ values. Mathematically, it can be expressed as:
+\begin{equation}
+    RMSE(a)=\sqrt{\frac{1}{N}\sum_{i=1}^N(\hat{a}-a)^2}
+\end{equation}
+
+As a final point of the performance analysis, the RMSE of the ESKF states are presented in Table~\ref{tab:rmse}.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{| c | c | c | c | c |}
+        \hline
+        Variable & Straight\& level & Straight\& descending & Zig-zag\& level & CARLA \\ 
+        \hline
+        X & 3.19\si{\meter} & 3.01\si{\meter} & 10.76\si{\meter} & 0.61\si{\meter} \\
+        Y & 0.14\si{\meter} & 2.71\si{\meter} & 2.97\si{\meter} & 4.01\si{\meter} \\
+        Z & 0.35\si{\meter} & 0.34\si{\meter} & 1.77\si{\meter} & 1.1\si{\meter}\\ 
+        \hline
+        $\phi$ & $20.52^\circ$ & $38.75^\circ$ & $25.39^\circ$ & $26.87^\circ$\\
+        $\theta$ & $29.46^\circ$ & $30.56^\circ$ & $31.62^\circ$ & $17.37^\circ$ \\
+        $\psi$ & $26.82^\circ$ & $44.94^\circ$ & $36.87^\circ$ & $13.84^\circ$ \\ 
+        \hline
+        $v_x$ & 0.204\si{\meter}/\si{\s} & 0.202\si{\meter}/\si{\s} & 0.546\si{\meter}/\si{\s} & 0.383\si{\meter}/\si{\s} \\
+        $v_y$ & 0.173\si{\meter}/\si{\s} & 0.374\si{\meter}/\si{\s} & 0.269\si{\meter}/\si{\s} & 1.209\si{\meter}/\si{\s} \\
+        $v_z$ & 0.315\si{\meter}/\si{\s} & 0.284\si{\meter}/\si{\s} & 0.333\si{\meter}/\si{\s} & 0.118\si{\meter}/\si{\s} \\
+        \hline
+        $a_{b, x}$ & 0.074\si{\meter}/\si{\s\squared} & 0.085\si{\meter}/\si{\s\squared} & 0.087\si{\meter}/\si{\s\squared} & $\approx$0\si{\meter}/\si{\s\squared} \\
+        $a_{b, y}$ & 0.083\si{\meter}/\si{\s\squared} & 0.074\si{\meter}/\si{\s\squared} & 0.077\si{\meter}/\si{\s\squared} & $\approx$0\si{\meter}/\si{\s\squared} \\
+        $a_{b, z}$ & 0.006\si{\meter}/\si{\s\squared} & 0.078\si{\meter}/\si{\s\squared} & 0.083\si{\meter}/\si{\s\squared} & $\approx$0\si{\meter}/\si{\s\squared} \\ 
+        \hline
+        $\omega_{b, x}$ & $0.35^\circ/\si{\s}$ & $0.35^\circ/\si{\s}$ & $0.35^\circ/\si{\s}$ & $\approx 0^\circ/\si{\s}$ \\
+        $\omega_{b, y}$ & $0.43^\circ/\si{\s}$ & $0.43^\circ/\si{\s}$ & $0.43^\circ/\si{\s}$ & $\approx 0^\circ/\si{\s}$ \\
+        $\omega_{b, z}$ & $0.43^\circ/\si{\s}$ & $0.44^\circ/\si{\s}$ & $0.43^\circ/\si{\s}$ & $\approx 0^\circ/\si{\s}$ \\
+        \hline
+    \end{tabular}
+    \caption{RMSE values}
+    \label{tab:rmse}
+\end{table}

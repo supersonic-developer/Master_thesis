@@ -1,12 +1,20 @@
-\chapter{Conclusion}\label{chap:conclusion}
+\chapter{Summary}\label{chap:conclusion}
 
-In summary, the integration of ESKF and LOST with assuming known GPS coordinates in the triangulation method can be regarded as a success. However, further advancements are necessary to ensure its practical viability in real-world scenarios. These enhancements encompass the following:
+Finally, in this chapter, the results of the filter are evaluated, and the conclusions are drawn.
+
+\section{Spoofing detection}
+
+UAVsmake, also known as drones, have seen a significant increase in usage in both military and civil sectors. Their applications range from surveillance and reconnaissance to cargo services, agriculture, and monitoring of critical infrastructures. However, the rapid growth in demand for UAVs and the pressure to reduce size, weight, power, and cost (SwaP-C) has often led to the neglect of security aspects, introducing serious safety and security threats.
+
+One of the major threats faced by UAVs is GPS spoofing. Since UAVs rely heavily on GPS for positioning and navigation, they are susceptible to GPS jamming and spoofing attacks. These attacks can misdirect or even completely hijack drones for malicious purposes. This vulnerability is not limited to UAVs but extends to other GPS-dependent platforms, including manned aircraft, ground vehicles, and cellular systems. Hence, in the literature, there have been already proposed several methods to detect GPS spoofing attacks~\cite{spoofing-1, spoofing-2}.
+
+In this paper, a GPS-free method was presented to estimate the position of a UAV using only the measurements of an IMU and a camera. The method is based on the VIO algorithm, which is a state-of-the-art method for estimating the pose of a camera. The algorithm can be run without any GPS measurements, and this makes it robust against GPS spoofing attacks. With the usage of the algorithm freed from GPS measurements, the UAV can estimate its position and it can be used to compare the estimated position with the GPS measurements. If the difference between the two positions is significant in a short period, then the UAV can be under a GPS spoofing attack.
+
+\section{Conclusion}
+
+All in all, the developed algorithm showed great potential, although, further development is needed to make it more robust and reliable. The following steps are recommended to be taken in the future:
 \begin{enumerate}
-    \item Creating a useful cross-covariance estimator method and integrating it into the filter framework.
-    \item The integration of genuine image processing algorithms into the ESKF framework, leading to:
-    \begin{enumerate}
-        \item The incorporation of camera imperfections, such as lens distortion errors into the simulation.
-        \item The enhancement of the measurement update process to rely not solely on a single camera image but also on track information pertaining to feature points.
-    \end{enumerate}
-    \item The development of a back-end component for the filter.
+    \item It is recommended to test and fine-tune the algorithm in a simulation environment, where the visual measurements and feature selection are produced by an image processing algorithm.
+    \item Before testing the real algorithm, it is recommended to test it in a simulation environment where the noises and biases of the sensors are modeled with the parameters of a real IMU.
+    \item Developing a back end for the algorithm, which can be a pose graph based on the results of the front end to produce global estimates.
 \end{enumerate}
