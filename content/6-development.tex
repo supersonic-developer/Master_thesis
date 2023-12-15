@@ -1,55 +1,64 @@
 \chapter{Development}\label{chap:dev}
 
-In this chapter, I delve into the intricate construction of the simulation environment, unveiling the tools employed and the nuanced calibration of parameters essential to its functionality. The selected tools will be introduced that serve as the bedrock for the experimental framework. This section sheds light on the nuanced decisions made to improve the simulation's fidelity and optimize the filter's performance. 
+In this chapter, I explain how I built the simulation environment and the selected tools will be introduced that serve as the bedrock for the experimental framework. This section sheds light on the nuanced decisions made to improve the simulation's fidelity and optimize the filter's performance. 
 
 \section{Simulation environment}
 
-The initial simulation was developed by SZTAKI System Control Laboratory (SCL) using Matlab/Simulink under the R2019b version, which formed the foundation for subsequent development. The simulation incorporates various toolboxes, including aerospace, UAV, navigation, and real-time Simulink, among others, to enhance its realism. The aircraft model utilizes the parameters of Sindy\footnote{\url{http://uav.sztaki.hu/sindy/home.html}}, while the environment is represented using the WGS84 convention.
+The initial simulation was developed by the System Control Laboratory (SCL) of the Institute for Computer Science and Control (SZTAKI, Számítástechnikai és Automatizálási Kutatóintézet). The simulation environment is based on the Matlab/Simulink R2019b version, which formed the foundation for subsequent development. The simulation incorporates various toolboxes, including aerospace, UAV, navigation, and real-time Simulink, among others, to enhance its realism. The aircraft model utilizes the parameters of Sindy\footnote{\url{http://uav.sztaki.hu/sindy/home.html}}, while the environment is represented using the WGS84 (World Geodetic System) convention.
 
-During the development, I had to integrate a filter into the simulation, which is mainly based on a user-defined Matlab function block. This block gets the true state of the aircraft as input and uses this data to project feature points on a camera screen. It also runs an ESKF at 50 \si{\hertz}, and the new visual measurements are available at 10 \si{\hertz} and generated from coordinates based on pinhole equations.
+During the development, I had to integrate the algorithm into the simulation, which is mainly based on a user-defined Matlab function block. It runs the ESKF at 50 \si{\hertz}, and the new visual measurements are available at 10 \si{\hertz}. Initially, the visual measurements were generated from known feature coordinates based on the pinhole equations, because this block gets the true state of the aircraft as input, and this data was used to project the feature points onto the camera screen. Later synthetic images were generated in the Unreal Car Learning to Act (CARLA) simulation environment by the Computational Optical Sensing and Processing Laboratory (COSPL) of SZTAKI.\@ In this case, a real image processing algorithm, a Kanade-Lucas-Tomasi feature tracker is used to track features across image frames~\cite{KLT}, this algorithm was also developed by SZTAKI.\@ 
 
-\section{Noise calibration}
+\subsection{Noise and bias calibration}
 
-The system required setting five different noise values. Four of them are connected to process noise that was defined in~\eqref{eq:noises}, and one of them models the visual measurement error $\sigma_u$. The measurement noises $\sigma_{\eta_\omega}$ and $\sigma_{\eta_a}$ are usually given as rate density in IMU datasheets, which is a sampling frequency-dependent quantity, therefore, their unit of measurement is $\si{\frac{\circ}{\second\sqrt{\hertz}}}$ and $\si{\frac{\micro g}{\sqrt{\hertz}}}$, where $1\si{\micro g}=9.81\si{\frac{\meter}{\second\squared}}\cdot 10^{-6}$. The change of biases over time are temperature-dependent parameters, but the current solution doesn't take into account this impact, therefore their value was chosen for a small value. The exact dispersion parameters are presented in Table~\ref{tab:noises} and were calculated for 50\si{\hertz} sampling frequency.
+The simulation required setting five different noise values and the sensor biases. Four of the noises are connected to process noise that was defined in~\eqref{eq:noises}, and an additional one models the visual measurement error $\sigma_u$. The measurement noises $\sigma_{\eta_\omega}$ and $\sigma_{\eta_a}$ were set slightly higher, than the noises of a real IMU, and these noises were simulated with the \textit{randn} function of Matlab. The variation of biases over time are temperature-dependent parameters, but the current solution doesn't take into account this effect, therefore they were set to low values. The exact dispersion parameters and sensor biases are presented in Table~\ref{tab:noises} and were calculated for 50\si{\hertz} sampling frequency.
 
 \begin{table}[!ht]
     \centering
-    \begin{tabular}{l c c c}
-         Name & Notation & Value & UoM \\ 
-         \toprule
-         Angular velocity measurement noise & $\sigma_{\eta_\omega}$ & $0.1\cdot\sqrt{50}\approx 0.707$ & $\si{\frac{\circ}{\second}}$ \\
-         Acceleration measurement noise & $\sigma_{\eta_a}$ & $1\cdot\sqrt{50}=7.07$ & $\si{\milli g}$ \\
-         Accelerometer bias variation & $\sigma_{\eta_{\beta_a}}$ & $10^{-6}$ & $\si{\frac{\meter}{\second\squared\sqrt{\hertz}}}$ \\
-         Gyroscope bias variation & $\sigma_{\eta_{\beta_\omega}}$ & $10^{-7}$ & $\si{\frac{\radian}{\second\sqrt{\hertz}}}$ \\
-         Camera measurement noise & $\sigma_u$ & 0.7 & \si{px}
+    \begin{tabular}{| l | c | c | c |}
+        \hline
+        Name & Notation & Value & UoM \\ 
+        \hline
+        Angular velocity measurement noise & $\sigma_{\eta_\omega}$ & 1 & $\si{\frac{\circ}{\second}}$ \\
+        Acceleration measurement noise & $\sigma_{\eta_a}$ & 0.1 & $\si{\frac{\meter}{\second\squared}}$ \\
+        Accelerometer bias variation & $\sigma_{\eta_{\beta_a}}$ & $10^{-6}$ & $\si{\frac{\meter}{\second\squared}\sqrt{\hertz}}$ \\
+        Gyroscope bias variation & $\sigma_{\eta_{\beta_\omega}}$ & $10^{-7}$ & $\si{\frac{\radian}{\second}\sqrt{\hertz}}$ \\
+        Camera measurement noise & $\sigma_u$ & 0.7 & \si{px} \\ 
+        Accelerometer bias & $\boldsymbol{\beta}_a$ & $\begin{bmatrix}0.5 & -0.4 & 0.4 \end{bmatrix}$ & $\si{\frac{\meter}{\second\squared}}$ \\
+        Gyroscope bias & $\boldsymbol{\beta}_\omega$ & $\begin{bmatrix}0.04 & 0.05 & -0.05\end{bmatrix}$ & $\si{\frac{\radian}{\second}}$ \\
+        \hline
     \end{tabular}
     \caption{Noise summary}\label{tab:noises}
 \end{table}
 
-\section{Camera configuration}
+\subsection{Camera configuration}
 
-For simulation purposes, I utilized the intrinsic parameters of a Basler camera, and its parameters are presented in table~\ref{tab:cam-intrinsic}.
+For simulation purposes, I utilized the intrinsic parameters of a Basler acA 2040 camera, but the synthetic camera images were generated for a Basler dcA 1280 camera. The parameters of the utilized cameras are introduced in Table 1 of~\cite{basler}, but the focal lengths were calculated with a slightly different FOV angle, than the presented ones, hence, I introduce the employed parameters for each camera that is presented in Table~\ref{tab:cam-parameters}. I also included the constant extrinsic parameters of the cameras for example the camera position in the body frame ($\mathbf{p}_b^c$) and the camera tilt angle ($\beta$).
+
 \begin{table}[!ht]
     \centering
-    \begin{tabular}{l c c}
-         Name & Notation & Value [px] \\ 
-         \toprule
-         Focal length & $f$ &  1177.5 \\
-         Principal point X & $p_x$ & 1024 \\
-         Principal point Y & $p_y$ & 768 \\
-         Image width & $W$ & 2048 \\
-         Image height & $H$ & 1536
+    \begin{tabular}{| l | c | c |}
+        \hline
+        Type & Basler dcA 1280 & Basler acA 2040\\ 
+        \hline
+        Focal length [px] & 1108.513 & 1177.5 \\
+        Principal point X [px] & 640 & 1024 \\
+        Principal point Y [px] & 480 & 768 \\
+        Image width [px] & 1280 & 2048 \\
+        Image height [px] & 960 & 1536 \\
+        Camera position [m] & $\begin{bmatrix} 1 & 0 & 0 \end{bmatrix}^T$ &  $\begin{bmatrix} 0 & 0 & 0 \end{bmatrix}^T$ \\
+        Camera tilt angle [$\si{\circ}$] & -20 & -45 \\
+        \hline
     \end{tabular}
-    \caption{Camera intrinsic parameters}\label{tab:cam-intrinsic}
+    \caption{Camera parameters}\label{tab:cam-parameters}
 \end{table}
 
 \subsection{Feature point selection}
 
-The feature point selection is a crucial part of the algorithm and may have the most potential to improve. It is not exactly just a camera configuration because this impacts the whole algorithm's performance and schedule. The feature points have to be chosen carefully because a good choice can maintain the stability of the system for a longer period.
+First of all, I want to clarify that the feature point selection is only relevant when I had to select the tracked features, but when a real image processing algorithm is included in the system the feature selection is its responsibility. The feature point selection impacts the whole algorithm's performance and schedule. The feature points have to be chosen carefully because a good choice can maintain the stability of the system for a longer period.
 
-In~\cite{image-based-INS}, it was proposed in VIO systems choosing features from the edge of the image can be beneficial, since the pixel coordinates are moving the most near the edges. That phenomenon is related to the optical flow equations that describe the derivatives of the pixel coordinates. In~\cite{optic-flow}, the optical flow equations were presented in (1) and it shows that the derivative of image coordinates depends on the image coordinates either at the first or higher order, thus the values of the derivatives increase as the image coordinates increase. Important to emphasize in this context we talk about the principal point compensated measurements, therefore the (0,0) image coordinate is near to the center of the image.
+In~\cite{image-based-INS}, they proposed that in Visual Inertial Odometry (VIO) systems, choosing features from the edge of the image can be beneficial, since the pixel coordinates are moving the most near the edges. That phenomenon is related to the optical flow equations that describe the derivatives of the pixel coordinates. In~\cite{optic-flow}, the optical flow equations were presented in (1) and it shows that the derivative of the image coordinates depends on the image coordinates either at the first or higher order, thus the values of the derivatives increase as the image coordinates increase. Important to emphasize in this context we talk about the principal point compensated measurements, therefore the (0,0) image coordinate is near to the center of the image.
 
-In~\cite{rel-nav}, they claim their monocular VIO system performance degrades when the aircraft flies straight and level due to velocity being less observable for a monocular VIO, and it could also relate to the fact during straight and level flight the tracked features move less on the image plane.
+In~\cite{rel-nav}, they claim their monocular VIO system performance degrades when the aircraft flies straight and level due to the velocity being less observable for a monocular VIO, and it could also relate to the fact during straight and level flight the tracked features move less on the image plane.
 
 To sum up, it has the beneficial properties of choosing features from the edge of the image, but the current algorithm combines the results of two estimators (EKSF and LOST) therefore it's very important to keep estimations near to their real value. If features are visible for only a short period the LOST algorithm is not able to produce high-quality estimates which leads to fewer updates on the state, and we are caught in a vicious circle. In the current solution, I select feature points in the area inward from the edge of the image for example in Figure~\ref{fig:camera-image}.
 
@@ -59,115 +68,123 @@ To sum up, it has the beneficial properties of choosing features from the edge o
     \caption{Camera image example}\label{fig:camera-image}
 \end{figure}
 
-When the algorithm starts it selects 18 features equally distributed from the inward area. After initialization, if a tracked feature leaves the image, a new one will be selected so that it is furthest away from the other tracks. It's advantageous because it provides equal distribution concerning the image, and the independent measurement noise assumption is more accurate. Furthermore, this approach keeps a configurable zone inward from the image edges therefore the features are visible for a longer period.
+When the algorithm starts it selects 18 features equally distributed from the inward area. After initialization, if a tracked feature leaves the image, a new one will be selected so that it is furthest away from the other tracked features. This is advantageous because it provides equal distribution concerning the image, and the independent measurement noise assumption is more accurate. Furthermore, this approach keeps a configurable zone inward from the image edges therefore the features are visible for a longer period.
 
 \section{Simulation results}
 
-Once the parameters have been configured, only the flight trajectory needs to be defined which is described with waypoints that the aircraft must pass through. The similarity in all cases is that the LOST algorithm uses true values of the camera state to estimate feature positions until 30\si{\second}, from the 30\si{\second} the true state is not available and LOST starts to utilize ESKF state for estimation. The currently optimized feature is included in the ESKF update if the square root of its largest eigenvalue is less than 10\si{\meter} with the 3-$\sigma$ rule. This rule states that the value of a Gaussian distributed probabilistic variable is in the interval $[\mu-3\sigma;\mu+3\sigma]$ with a 99.7\% confidence level.
+Once the parameters have been configured, only the flight trajectory needs to be defined which is described with waypoints that the aircraft must pass through. The similarity in all cases is that the LOST algorithm uses true values of the camera position and orientation to estimate feature positions until 30\si{\second}, from the 30\si{\second} the true state is not available and the LOST starts to utilize the ESKF estimations. It's advantageous because the ESKF has time to converge to the true state.
+
+A tracked feature is included in the ESKF measurement update if the square root of its largest eigenvalue is less than 10\si{\meter} with the 1-$\sigma$ rule. This is a beneficial choice because the eigenvalues of a 3-D vector's covariance matrix represent an ellipsoid in the 3-D space and the square root of the eigenvalues are the dispersion along each axes and they describe the length of the semi-axes. The mean of the vector points to the center of the ellipsoid and using the standard deviations, an interval can be defined in which, for a given confidence level, the endpoint of the vector can be found. The k-$\sigma$ rule is also called as 68--95--99.7 rule because a Gaussian distributed variable is in the interval $[\mu-k\sigma;\mu+k\sigma]$ with the confidence level of 68\%, 95\% or 99.7\% with value of $k=1, 2, 3$ respectively. I have chosen the 1-$\sigma$ rule because it offers a quite high confidence interval, beside that it is the less strict constraint. I have also tried other values of k, but the results were not better because in these cases, the ESKF update condition is not met for a longer period which leads to divergence sooner.
 
 \subsection{Straight and level flight path}
 
 The actual and estimated flight trajectory considering only 2-D position is shown in Figure~\ref{fig:straight-level} and related estimations below.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includesvg[width=0.6\textwidth, inkscapelatex=false]{figures/straight-level/straight-level}
-    \caption{Straight and level flight path}\label{fig:straight-level}
+    \begin{subfigure}{0.45\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/straight-level}
+        \caption{Straight and level flight path}\label{fig:straight-level}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/straight-level-error}
+        \caption{Straight and level flight path relative error}\label{fig:straight-level-error}
+    \end{subfigure}
 \end{figure}
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/X}
-        \caption{Straight and level---X}
+        \caption{Straight and level path---X}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/Y}
-        \caption{Straight and level---Y}
+        \caption{Straight and level path---Y}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/Z}
-        \caption{Straight and level---Z}
+        \caption{Straight and level path---Z}
     \end{subfigure}
-    \caption{Straight and level---position}\label{fig:straight-level-pos}
+    \caption{Straight and level path---position}\label{fig:straight-level-pos}
 \end{figure}
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/roll}
-        \caption{Straight and level---roll}
+        \caption{Straight and level path---roll}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/pitch}
-        \caption{Straight and level---pitch}
+        \caption{Straight and level path---pitch}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/yaw}
-        \caption{Straight and level---yaw}
+        \caption{Straight and level path---yaw}
     \end{subfigure}
-    \caption{Straight and level---orientation}\label{fig:straight-level-ori}
+    \caption{Straight and level path---orientation}\label{fig:straight-level-ori}
 \end{figure}
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/vbx}
-        \caption{Straight and level---$v_{b,x}$}
+        \caption{Straight and level path---$v_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/vby}
-        \caption{Straight and level---$v_{b,y}$}
+        \caption{Straight and level path---$v_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/vbz}
-        \caption{Straight and level---$v_{b,z}$}
+        \caption{Straight and level path---$v_{b,z}$}
     \end{subfigure}
-    \caption{Straight and level---velocity}\label{fig:straight-level-vel}
+    \caption{Straight and level path---velocity}\label{fig:straight-level-vel}
 \end{figure}
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/abx}
-        \caption{Straight and level---$a_{b,x}$}
+        \caption{Straight and level path---$a_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/aby}
-        \caption{Straight and level---$a_{b,y}$}
+        \caption{Straight and level path---$a_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/abz}
-        \caption{Straight and level---$a_{b,z}$}
+        \caption{Straight and level path---$a_{b,z}$}
     \end{subfigure}
-    \caption{Straight and level---acceleration bias}\label{fig:straight-level-abias}
+    \caption{Straight and level path---acceleration bias}\label{fig:straight-level-abias}
 \end{figure}
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/wbx}
-        \caption{Straight and level---$\omega_{b,x}$}
+        \caption{Straight and level path---$\omega_{b,x}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/wby}
-        \caption{Straight and level---$\omega_{b,y}$}
+        \caption{Straight and level path---$\omega_{b,y}$}
     \end{subfigure}
     \hfill
     \begin{subfigure}{0.3\textwidth}
         \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-level/wbz}
-        \caption{Straight and level---$\omega_{b,z}$}
+        \caption{Straight and level path---$\omega_{b,z}$}
     \end{subfigure}
-    \caption{Straight and level---angular velocity bias}\label{fig:straight-level-wbias}
+    \caption{Straight and level path---angular velocity bias}\label{fig:straight-level-wbias}
 \end{figure}
 
 Summarizing, the charts show that
@@ -175,4 +192,219 @@ Summarizing, the charts show that
 
 \subsection{Straight and descending flight path}
 
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/straight-descending}
+        \caption{Straight and descending path}\label{fig:straight-descending}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/straight-descending-error}
+        \caption{Straight and descending path relative error}\label{fig:straight-descending-error}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/X}
+        \caption{Straight and descending path---X}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/Y}
+        \caption{Straight and descending path---Y}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/Z}
+        \caption{Straight and descending path---Z}
+    \end{subfigure}
+    \caption{Straight and descending path---position}\label{fig:straight-descending-pos}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/roll}
+        \caption{Straight and descending path---roll}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/pitch}
+        \caption{Straight and descending path---pitch}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/yaw}
+        \caption{Straight and descending path---yaw}
+    \end{subfigure}
+    \caption{Straight and descending path---Euler angles}\label{fig:straight-descending-euler}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vbx}
+        \caption{Straight and descending path---$v_x$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vby}
+        \caption{Straight and descending path---$v_y$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/vbz}
+        \caption{Straight and descending path---$v_z$}
+    \end{subfigure}
+    \caption{Straight and descending path---velocity}\label{fig:straight-descending-vel}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/abx}
+        \caption{Straight and descending path---$a_{b,x}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/aby}
+        \caption{Straight and descending path---$a_{b,y}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/abz}
+        \caption{Straight and descending path---$a_{b,z}$}
+    \end{subfigure}
+    \caption{Straight and descending path---acceleration bias}\label{fig:straight-descending-abias}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wbx}
+        \caption{Straight and descending path---$\omega_{b,x}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wby}
+        \caption{Straight and descending path---$\omega_{b,y}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/straight-descending/wbz}
+        \caption{Straight and descending path---$\omega_{b,z}$}
+    \end{subfigure}
+    \caption{Straight and descending path---angular velocity bias}\label{fig:straight-descending-wbias}
+\end{figure}
+
+
 \subsection{Zig-zag flight path}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \includesvg[width=0.8\textwidth, inkscapelatex=false]{figures/zig-zag-level/zig-zag-level}
+        \caption{Zig-zag and level path}\label{fig:zig-zag-level}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+        \includesvg[width=0.8\textwidth, inkscapelatex=false]{figures/zig-zag-level/zig-zag-level-error}
+        \caption{Zig-zag and level path relative error}\label{fig:zig-zag-level-error}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/X}
+        \caption{Zig-zag and level path---X}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/Y}
+        \caption{Zig-zag and level path---Y}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/Z}
+        \caption{Zig-zag and level path---Z}
+    \end{subfigure}
+    \caption{Zig-zag and level path---position}\label{fig:zig-zag-level-pos}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/roll}
+        \caption{Zig-zag and level path---roll}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/pitch}
+        \caption{Zig-zag and level path---pitch}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/yaw}
+        \caption{Zig-zag and level path---yaw}
+    \end{subfigure}
+    \caption{Zig-zag and level path---Euler angles}\label{fig:zig-zag-level-euler}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vbx}
+        \caption{Zig-zag and level path---$v_x$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vby}
+        \caption{Zig-zag and level path---$v_y$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/vbz}
+        \caption{Zig-zag and level path---$v_z$}
+    \end{subfigure}
+    \caption{Zig-zag and level path---velocity}\label{fig:zig-zag-level-vel}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/abx}
+        \caption{Zig-zag and level path---$a_{b,x}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/aby}
+        \caption{Zig-zag and level path---$a_{b,y}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/abz}
+        \caption{Zig-zag and level path---$a_{b,z}$}
+    \end{subfigure}
+    \caption{Zig-zag and level path---acceleration bias}\label{fig:zig-zag-level-abias}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wbx}
+        \caption{Zig-zag and level path---$\omega_{b,x}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wby}
+        \caption{Zig-zag and level path---$\omega_{b,y}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+        \includesvg[width=\textwidth, inkscapelatex=false]{figures/zig-zag-level/wbz}
+        \caption{Zig-zag and level path---$\omega_{b,z}$}
+    \end{subfigure}
+    \caption{Zig-zag and level path---gyroscope bias}\label{fig:zig-zag-level-gbias}
+\end{figure}

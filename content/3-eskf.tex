@@ -48,9 +48,10 @@ The sensor-related quantities and the velocity are expressed in the body frame, 
 
 In the ESKF framework, three different states are defined: true ($\mathbf{x}_t$), nominal ($\mathbf{x}$), and error state ($\delta\mathbf{x}$). All of the ESKF variables are summarized in Table~\ref{tab:eskf-states}.
 
-\begin{longtable}{c | c | c | c | c | c}
+\begin{longtable}{| c | c | c | c | c | c |}
+    \hline
     True & Nominal & Error & Composition & Noise & Measured\\ 
-    \toprule
+    \hline
      $\mathbf{p}_{t}$ & $\mathbf{p}$ & $\delta\mathbf{p}$ & 
      $\mathbf{p}_{t}=\mathbf{p}+\delta\mathbf{p}$ & &\\
      $\mathbf{q}_{t}$ & $\mathbf{q}$ & $\delta\mathbf{q}\approx
@@ -63,12 +64,13 @@ In the ESKF framework, three different states are defined: true ($\mathbf{x}_t$)
      $\boldsymbol{\beta}_{a,t}$ & $\boldsymbol{\beta}_{a}$ & $\delta\boldsymbol{\beta}_{a}$ &
      $\boldsymbol{\beta}_{a,t}=\boldsymbol{\beta}_{a}+\delta\boldsymbol{\beta}_{a}$ & $\boldsymbol{\eta}_{\beta_a}$ &\\
      $\boldsymbol{\beta}_{\omega,t}$ & $\boldsymbol{\beta}_{\omega}$ & $\delta\boldsymbol{\beta}_{\omega}$ & $\boldsymbol{\beta}_{\omega,t}=\boldsymbol{\beta}_{\omega}+ \delta\boldsymbol{\beta}_{\omega}$ & $\boldsymbol{\eta_{\beta_\omega}}$ &\\ 
-    \midrule
-     $\mathbf{R}_t$ & $\mathbf{R}$ & $\delta\mathbf{R}=e^{\begin{bmatrix}
-         \delta\boldsymbol{\theta}
-     \end{bmatrix}_\times}$ &  $\mathbf{R}_t=\delta\mathbf{R}\mathbf{R}$ & & \\
-     $\mathbf{a}_t$ & $\mathbf{a}$ & $\delta\mathbf{a}$ & $\mathbf{a}+\delta\mathbf{a}$ & $\boldsymbol{\eta_{a}}$ & $\mathbf{a}_m$\\
-     $\boldsymbol{\omega}_t$ & $\boldsymbol{\omega}$ & $\delta\boldsymbol{\omega}$ & $\boldsymbol{\omega}$ + $\delta\boldsymbol{\omega}$ & $\boldsymbol{\eta_\omega}$ & $\boldsymbol{\omega}_m$\\
+    \hline
+    $\mathbf{R}_t$ & $\mathbf{R}$ & $\delta\mathbf{R}=e^{\begin{bmatrix}
+        \delta\boldsymbol{\theta}
+    \end{bmatrix}_\times}$ &  $\mathbf{R}_t=\delta\mathbf{R}\mathbf{R}$ & & \\
+    $\mathbf{a}_t$ & $\mathbf{a}$ & $\delta\mathbf{a}$ & $\mathbf{a}+\delta\mathbf{a}$ & $\boldsymbol{\eta_{a}}$ & $\mathbf{a}_m$\\
+    $\boldsymbol{\omega}_t$ & $\boldsymbol{\omega}$ & $\delta\boldsymbol{\omega}$ & $\boldsymbol{\omega}$ + $\delta\boldsymbol{\omega}$ & $\boldsymbol{\eta_\omega}$ & $\boldsymbol{\omega}_m$\\
+    \hline
     \caption{ESKF states and inputs}\label{tab:eskf-states}
 \end{longtable}
 
@@ -317,7 +319,7 @@ where $\delta\hat{\mathbf{x}}$ is the mean of the error state, therefore $\delta
 
 \subsection{Update step}
 
-In this section, I focus on how the measurement Jacobian of the error state is calculated. The most straightforward approach to do that for a feature point involves the utilization of the chain rule. First, the Jacobian of the pixel measurement with respect to the feature point ($\mathbf{J}\in\mathbb{R}^{2\times3}$) has to be computed, then the Jacobian of the feature point with respect to the true state ($\mathbf{P}_{x_t}\in\mathbb{R}^{3\times 16}$) and finally the Jacobian of the true state with respect to the error state ($\mathbf{X}_{\delta x}\in\mathbb{R}^{16\times 15}$). So the jacobian of the measurement with respect to the error state:
+In this section, I focus on how the measurement Jacobian of the error state is calculated. The most straightforward approach to do that for a feature point involves the utilization of the chain rule. First, the Jacobian of the pixel measurement with respect to the feature point ($\mathbf{J}\in\mathbb{R}^{2\times3}$) has to be computed, then the Jacobian of the feature point with respect to the true state ($\mathbf{P}_{x_t}\in\mathbb{R}^{3\times 16}$) and finally the Jacobian of the true state with respect to the error state ($\mathbf{X}_{\delta x}\in\mathbb{R}^{16\times 15}$). So the Jacobian of the measurement with respect to the error state:
 \begin{equation}
     \mathbf{H}_x=\frac{\partial h(\mathbf{p}_c^f)}{\partial\delta\mathbf{x}}= 
     \frac{\partial h(\mathbf{p}_c^f)}{\partial\mathbf{p}_c^f}
@@ -377,6 +379,7 @@ The whole derivative by the true state results in a $3\times 16$ matrix:
     \mathbf{P}_{\mathbf{x}_t}=\begin{bmatrix}
      \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{p}_n^b} & \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{q}_{BN}} & \mathbf{0}_{3\times 9}
     \end{bmatrix}
+    \label{eq:der-pc-by-xt}
 \end{equation}
 
 \subsection*{Jacobian of the true-state with respect to the error state}

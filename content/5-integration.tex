@@ -1,83 +1,95 @@
 \chapter{Synergizing LOST and ESKF for robust navigation}\label{chap:integration}
 
-In the previous two chapters, the applied filter technique and triangulation approach were introduced, and now the focus shifts toward the integration of the two methods. This integration process will begin by examining the impact on the Kalman gain, a crucial component in the navigation system. Furthermore, the discussion extends to the role of cross-covariances in the process of integration.
+\lettrine{T}{he} applied filter technique and the triangulation approach have been already introduced, and now the focus shifts toward the integration of the two methods. This integration process will begin by examining the impact on the Kalman gain, a crucial component in the navigation system. Furthermore, the discussion extends to the role of cross-covariances in the process of integration.
 
 \section{The modified Kalman gain}
 
-The derivation of the Kalman gain is based on~\cite{discrete_kalman_tutorial}, but adopted to the implemented system. Firstly, the integration affects the Kalman gain because forming the residual involves both the triangulated feature position and the filter state. Previously, only the uncertainty of the state was considered, but as soon as the true values of the 3-D feature position are not known, then its uncertainty should be taken into account too.
+The derivation of the Kalman gain is based on~\cite{discrete_kalman_tutorial}, but adopted to the implemented system. Firstly, the integration affects the Kalman gain because forming the residual involves both the triangulated feature position and the filter state. Previously, only the uncertainty of the state was considered, but as soon as the true values of the feature position are not known, then its uncertainty should be taken into account too.
 
 \subsection{The error propagation from measurement to measurement}
 
-Taking a look at the error model on~\eqref{eq:error-state-dyn} and the propagation equations on~\eqref{eq:err-state-dyn} and~\eqref{eq:err-cov-prop}, the error state is propagated from a posterior state to the next update as:
-\begin{equation}
-\begin{aligned}
-    \delta\mathbf{x}_{k+N}^- &= \left(\prod_{j=0}^{N-1}\mathbf{F}_{x,k+j}\right)\delta\mathbf{x}_k^- + \left[\sum_{j=0}^{N-1}\left(\prod_{l=j+1}^{N-1}\mathbf{F}_{x,k+l} \right) \mathbf{F}_{i,k+j} \mathbf{i}_{k+j}\right] \\ &= \mathbf{PF}_x^N\delta\mathbf{x}_k^- + \mathbf{SF}_i^N \mathbf{i} 
- \label{eq:true-err-state}
-\end{aligned}
-\end{equation}
+The error propagation is described in~\eqref{eq:error-state-dyn}, but usually, there is more than one prediction step between two measurement updates, therefore extending this equation for N predictions yields:
+\begin{subequations}
+\begin{align}
+    \delta\mathbf{x}_{k+N} &= \left(\prod_{j=0}^{N-1}\mathbf{F}_{x,k+j}\right)\delta\mathbf{x}_k + \left[\sum_{j=0}^{N-1}\left(\prod_{l=j+1}^{N-1}\mathbf{F}_{x,k+l} \right) \mathbf{F}_{i,k+j} \mathbf{i}_{k+j}\right] \\ &= \mathbf{PF}_x^N\delta\mathbf{x}_k + \mathbf{SF}_i^N \mathbf{i} 
+    \label{eq:true-err-state}
+\end{align}
+\end{subequations}
 
-The significant insight gleaned from the aforementioned equations is that error propagation can be divided into two components. The first pertains to the propagation of the mean error state, denoted as $\mathbf{PF}_x^N\delta\mathbf{x}_k$, while the second is associated with accounting for the integration of Additive White Gaussian Noise (AWGN) within the system, denoted as $\mathbf{SF}_i^N \mathbf{i}$.
+The aforementioned equations yield a crucial insight, that the error propagation can be divided into two components. The first concerns the propagation of the previous a posteriori error state, denoted as $\mathbf{PF}_x^N\delta\mathbf{x}_k$, while the second is associated with accounting for the integration of Additive White Gaussian Noise (AWGN) within the system, denoted as $\mathbf{SF}_i^N \mathbf{i}$.
 
 \subsection{The measurement model}
 
-The actual measurement is produced by h (.) non-linear function and the true value of the state and feature that leads to:
+The actual measurement is produced by the nonlinear function $h(.)$ with the true values of the state and the feature position plus an AWGN on the visual measurement hence, the measurement can be constructed as:
 \begin{equation}
-    \mathbf{z}_{k+N} = h(\mathbf{x}_{t,k+N},\mathbf{p}_{n,t}^f)
+\begin{aligned}
+    \mathbf{z}_{k+N} &= h(\mathbf{x}_{t,k+N},\mathbf{p}_{n,t}^f)+\delta\mathbf{u}_{k+N}\\
+    &\approx h(\mathbf{x}_{k+N},\mathbf{p}_{n}^f)+\mathbf{H}_{x,k+N}\delta\mathbf{x}_{k+N}+\mathbf{H}_{f, k+N}\delta\mathbf{p}_{n}^f + \delta\mathbf{u}_{k+N},
+\end{aligned}
 \end{equation}
 
-To form the residual, the measurements have to be predicted and it's done based on the following mathematical model:
-\begin{equation}
-    \hat{\mathbf{z}}_{k+N} = h(\mathbf{x}_{k+N},\mathbf{p}_{n}^f) + \mathbf{H}_{x,k+N}\delta\mathbf{x}_{k+N}+\mathbf{H}_{f, k+N}\delta\mathbf{p}_{n}^f + \delta\mathbf{u}_{k+N}, 
-\end{equation}
-where one part relates to the non-linear projection h (.) onto the nominal state and another is connected to the linearised error models. $\mathbf{H}_{f,k+N}$ is the pixel measurement Jacobian by the feature that can be calculated by taking the derivative of~\eqref{eq:feature-in-cam}, that yields:
+where the linearized error approximation was utilized, and $\mathbf{H}_{f,k+N}$ is the pixel measurement Jacobian with respect to the feature position which can be calculated by taking the derivative of~\eqref{eq:feature-in-cam}, that yields:
 \begin{equation}
     \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{p}_n^f}=\mathbf{R}_{CN}
 \end{equation}
-In this case, the Jacobian is the same for the error state and true state due to the true feature being modeled as $\mathbf{p}_{n,t}^f=\mathbf{p}_n^f+\delta\mathbf{p}_n^f$.
 
-The Kalman filter formalizes the new estimation as a composition of the a posteriori estimate $\delta\mathbf{x}_{k+N}^-$ and the residual $\mathbf{r}_{k+N}=\mathbf{z}_{k+N}-\hat{\mathbf{z}}_{k+N}$:
+To form the residual, the measurements have to be predicted ($\hat{\mathbf{z}}_{k+N}$), but at this point only the nominal states ($\mathbf{x}_{k+N}$, $\mathbf{p}_n^f$) are available:
+\begin{equation}
+    \hat{\mathbf{z}}_{k+N} = h(\mathbf{x}_{k+N}, \mathbf{p}_n^f)
+\end{equation}
+
+The Kalman filter forms the new estimation ($\delta\hat{\mathbf{x}}_{k+N}$) as a composition of the a priori state estimate and the residual $\mathbf{r}_{k+N}=\mathbf{z}_{k+N}-\hat{\mathbf{z}}_{k+N}$. However, it has been already discussed that the error state gets reset after every measurement update in the ESKF since it's modeled with a white Gaussian distribution. Therefore, the new error state is expressed as:
 \begin{equation}
 \begin{aligned}
-    \delta\mathbf{x}_{k+N} &= \delta\mathbf{x}_{k+N}^-+\mathbf{K}_{k+N}\mathbf{r}_{k+N} \\ &=
-    \delta\mathbf{x}_{k+N}^--\mathbf{K}_{k+N}(\mathbf{H}_{x,k+N}\delta\mathbf{x}_{k+N}^-+\mathbf{H}_{f, k+N}\delta\mathbf{p}_{n}^f + \delta\mathbf{u}_{k+N}) \\ &=
-    \overbrace{\left(\mathbf{I}_{15}-\mathbf{K}_{k+N}\mathbf{H}_{x,k+N}\right)}^{\mathbf{T}_x}\delta\mathbf{x}_{k+N}^--\overbrace{\mathbf{K}_{k+N}\mathbf{H}_{f,k+N}}^{\mathbf{T}_f}\delta\mathbf{p}_n^f - \mathbf{K}_{k+N}\delta\mathbf{u}_{k+N}
-    \label{eq:pred-err-state}
+    \delta\hat{\mathbf{x}}_{k+N} &= \mathbf{K}_{g, k+N}\mathbf{r}_{k+N} = \mathbf{K}_{g, k+N}(\mathbf{H}_{x,k+N}\delta\mathbf{x}_{k+N}+\mathbf{H}_{f, k+N}\delta\mathbf{p}_{n}^f + \delta\mathbf{u}_{k+N})
+\end{aligned}
+\end{equation}
+
+Now, the error in the a posteriori estimate ($\delta\mathbf{x}_{k+N}^a$) can be expressed as:
+\begin{equation}
+\begin{aligned}
+    \delta\mathbf{x}_{k+N}^a &= \delta\mathbf{x}_{k+N}-\delta\hat{\mathbf{x}}_{k+N} \\ &=
+    \delta\mathbf{x}_{k+N} - \mathbf{K}_{g, k+N}(\mathbf{H}_{x,k+N}\delta\mathbf{x}_{k+N}+ \mathbf{H}_{f,k+N}\delta\mathbf{p}_{n}^f + \delta\mathbf{u}_{k+N}) \\ &=
+    \underbrace{\left(\mathbf{I}-\mathbf{K}_{g, k+N}\mathbf{H}_{x,k+N}\right)}_{\mathbf{T}_{x, k+N}}\delta\mathbf{x}_{k+N} - \underbrace{\mathbf{K}_{g, k+N}\mathbf{H}_{f,k+N}}_{\mathbf{T}_{f, k+N}}\delta\mathbf{p}_{n}^f - \mathbf{K}_{g, k+N}\delta\mathbf{u}_{k+N}
 \end{aligned}
 \end{equation}
 
 \subsection{The optimal solution for Kalman gain}
 
-The propagated state covariance will denoted as $E\{\delta\mathbf{x}_{k+N}^-\delta\mathbf{x}_{k+N}^{-^T}\}=\mathbf{P}_{x,k+N}^-$, the feature covariance is $E\{\delta\mathbf{p}_n^f\delta\mathbf{p}_n^{f^T}\}=\mathbf{P}_f$, the measurement covariance is still $\mathbf{R}$. To give an optimal solution for the Kalman gain the a posteriori covariance should be expressed, but first, let's take some considerations. When a visual measurement was taken, the current approach updates the state first, then optimizes the feature with the same measurement which leads to a correlation between $\delta\mathbf{x}$ and $\delta\mathbf{p}_{n}^f$, that can be expressed with cross-covariance matrix $E\{\delta\mathbf{x}_{k+N} \delta\mathbf{p}_n^{f^T}\}=\mathbf{P}_{xf}$. At this point, I leave indexing because it is clear to which measurement it refers. The a posteriori covariance:
+Before I discuss in detail the optimal solution, let's establish a few mathematical notations. The propagated covariance of the state can be calculated based on~\eqref{eq:err-cov-prop} and is denoted with $E\{\delta\mathbf{x}_{k+N}\delta\mathbf{x}_{k+N}^T\}=\mathbf{P}_{x,k+N}^-$. The feature covariance is denoted with $E\{\delta\mathbf{p}_n^f\delta\mathbf{p}_n^{f^T}\}=\mathbf{P}_f$, and the measurement covariance is still $\mathbf{V}$. 
+
+To give an optimal solution for the Kalman gain the a posteriori covariance should be expressed, but first, let's take some considerations. Both the state and the feature position are optimized with the visual measurements furthermore, they are utilized in each other calculations, which leads to a correlation between $\delta\mathbf{x}$ and $\delta\mathbf{p}_{n}^f$. The correlation of their errors can be described with the cross-covariance matrix, which is denoted as $E\{\delta\mathbf{x}_{k+N}\delta\mathbf{p}_n^{f^T}\}=\mathbf{P}_{xf}$. An important property of the cross-covariance matrices are $\mathbf{P}_{xf}=\mathbf{P}_{fx}^T$. 
+
+From now on, I will omit the indexing, because it is clear to which time step the calculations refer. Let's express the a posteriori covariance of the state considering the cross-covariance:
 \begin{equation}
 \begin{aligned}
-    \mathbf{P}_x &=E\{\delta\mathbf{x}\delta\mathbf{x}^T\} \\ &=
+    \mathbf{P}_x &=E\{\delta\mathbf{x}^a\delta\mathbf{x}^{a^T}\} \\ &=
     \begin{aligned}
     \mathbf{T}_x\mathbf{P}_x^-\mathbf{T}_x^T+\mathbf{T}_f\mathbf{P}_f\mathbf{T}_f^T +
-    \mathbf{K}\mathbf{R}\mathbf{K}^T - \mathbf{T}_x\mathbf{P}_{xf}\mathbf{T}_f^T - \mathbf{T}_f\mathbf{P}_{fx}\mathbf{T}_x^T
+    \mathbf{K}_g\mathbf{V}\mathbf{K}_g^T - \mathbf{T}_x\mathbf{P}_{xf}\mathbf{T}_f^T - \mathbf{T}_f\mathbf{P}_{fx}\mathbf{T}_x^T
     \end{aligned}
 \end{aligned}
 \end{equation}
 
-Now, the optimal Kalman gain should be calculated, in the sense that it minimizes the trace of the posterior covariance. For starters, let's formalize the a posteriori covariance by extracting the terms containing $\mathbf{K}$:
+Now, the optimal Kalman gain should be calculated, in the sense that it minimizes the trace of the a posterior covariance. For starters, let's formalize the a posteriori covariance by extracting the terms containing $\mathbf{K}_g$:
 \begin{equation}
 \begin{aligned}
-    \mathbf{P}_x =& \mathbf{P}_x^--\mathbf{K}\left(\mathbf{H}_{x}\mathbf{P}_{x}^-+\mathbf{H}_{f}\mathbf{P}_{fx}\right) -
-    \overbrace{\left(\mathbf{P}_{x}^-\mathbf{H}_{x}^T + \mathbf{P}_{xf}\mathbf{H}_{f}^T\right)}^{E}\mathbf{K}^T \\ & +
-    \mathbf{K}\underbrace{\left(\mathbf{H}_{x}\mathbf{P}_{x}^-\mathbf{H}_{x}^T +\mathbf{H}_{f}\mathbf{P}_f\mathbf{H}_{f}^T+\mathbf{R} + \mathbf{H}_{x}\mathbf{P}_{xf}\mathbf{H}_f^T+\mathbf{H}_{f}\mathbf{P}_{fx}\mathbf{H}_x^T\right)}_{\mathbf{D}}\mathbf{K}^T
+    \mathbf{P}_x =& \mathbf{P}_x^--\mathbf{K}_g\left(\mathbf{H}_{x}\mathbf{P}_{x}^-+\mathbf{H}_{f}\mathbf{P}_{fx}\right) -
+    \overbrace{\left(\mathbf{P}_{x}^-\mathbf{H}_{x}^T + \mathbf{P}_{xf}\mathbf{H}_{f}^T\right)}^{E}\mathbf{K}_g^T \\ & +
+    \mathbf{K}_g\underbrace{\left(\mathbf{H}_{x}\mathbf{P}_{x}^-\mathbf{H}_{x}^T +\mathbf{H}_{f}\mathbf{P}_f\mathbf{H}_{f}^T+\mathbf{V} + \mathbf{H}_{x}\mathbf{P}_{xf}\mathbf{H}_f^T+\mathbf{H}_{f}\mathbf{P}_{fx}\mathbf{H}_x^T\right)}_{\mathbf{D}}\mathbf{K}_g^T
 \end{aligned}
 \end{equation}
 
-Important to highlight the property $\mathbf{E}=\mathbf{E}^T$. Finally, the optimal Kalman gain can be computed from the above equation by taking the derivative by $\mathbf{K}$ and solving it for 0.
+Important to highlight the property $\mathbf{E}=\mathbf{E}^T$ which derives from the positive semi-definite property of the covariance matrices. Finally, the optimal Kalman gain can be determined from the above equation, because $\mathrm{tr}(\mathbf{P}_x)$ is a function of $\mathbf{K}_g$ and $\mathbf{K}_g$ is the only unknown variable, and we request to minimize the trace of the a posteriori covariance with respect to $\mathbf{K}_g$. The partial derivative of the trace is easily given using matrix calculus rules~\cite{matrix-calculus}:
 \begin{equation}
-    \frac{\partial \mathrm{tr}(\mathbf{P}_{x})}{\partial\mathbf{K}} = -\mathbf{E}^T-\mathbf{E}+2\mathbf{KD}=0
+    \frac{\partial \mathrm{tr}(\mathbf{P}_{x})}{\partial\mathbf{K}_g} = -\mathbf{E}^T-\mathbf{E}+2\mathbf{K}_g\mathbf{D} = 0
 \end{equation}
 
-Rearranging the terms for $\mathbf{K}$:
+Rearranging the terms for $\mathbf{K}_g$ the optimal solution is given as:
 \begin{equation}
-    \mathbf{K}=\mathbf{E}\mathbf{D}^{-1}
+    \mathbf{K}_g=\mathbf{E}\mathbf{D}^{-1}
+\label{eq:optimal-kalman-gain}
 \end{equation}
-
-Details about the result of the derivative can be found in~\cite{discrete_kalman_tutorial}.
 
 \section{Cross-covariance estimation}
 
@@ -86,9 +98,9 @@ The method for cross-covariance modeling is utilized from~\cite{oliver2003gaussi
     \mathbf{y}=\boldsymbol{\mu} + \mathbf{L}\mathbf{z}, \quad \mathbf{P}=\mathbf{L}\mathbf{L}^T,
 \end{equation}
 
-where $\mathbf{L}\in\mathbb{R}^{p\times m}$ matrix of rank m and $\mathbf{z}$ is a vector m independent identically distributed standard normal variable~\cite{rao}. Both~\cite{Alabert1987, Davis1987} propose the usage of the LU decomposition for conditional simulations, which results in simulating Gaussian random fields. In my work, I employ a similar approach by calculating the square root decomposition of covariance matrices to efficiently create cross-covariance models, maintaining simplicity, flexibility, and computational efficiency in the process.
+where $\mathbf{L}\in\mathbb{R}^{p\times m}$ matrix of rank m and $\mathbf{z}$ is a vector with m independent identically distributed standard normal variable~\cite{rao}. Both~\cite{Alabert1987, Davis1987} propose the usage of the LU decomposition for conditional simulations, which results in simulating Gaussian random fields. In my work, I employ a similar approach by calculating the square root decomposition of covariance matrices to efficiently create cross-covariance models.
 
-The method introduces two correlated random Gaussian vectors $\mathbf{y}_1$ and $\mathbf{y}_2$ with $\rho$ correlation:
+The method introduces two correlated random Gaussian vectors $\mathbf{y}_1$ and $\mathbf{y}_2$ with $\rho$ correlation factor:
 \begin{equation}
 \begin{aligned}
     \mathbf{y}_1 &= \boldsymbol{\mu}_1+\mathbf{L}_1\mathbf{z}_1 \\
@@ -96,7 +108,7 @@ The method introduces two correlated random Gaussian vectors $\mathbf{y}_1$ and 
 \end{aligned}
 \end{equation}
 
-The covariance matrices of the vectors are $E\{(\mathbf{y}_1-\boldsymbol{\mu}_1){(\mathbf{y}_1-\boldsymbol{\mu}_1)}^T\}=\mathbf{L}_1\mathbf{L}_1^T$ and $E\{(\mathbf{y}_2-\boldsymbol{\mu}_2){(\mathbf{y}_2-\boldsymbol{\mu}_2)}^T\}=\mathbf{L}_2\mathbf{L}_2^T$, that utilizes $\mathbf{z}_1$ and $\mathbf{z}_2$ are zero-mean standard Gaussian distributed vectors, therefore $E\{\mathbf{z}_1\mathbf{z}_1^T\}, E\{\mathbf{z}_2{\mathbf{z}_2}^T\}=\mathbf{I}$ and $E\{\mathbf{z}_1\mathbf{z}_2^T\}, E\{\mathbf{z}_2\mathbf{z}_1^T\}=\mathbf{0}$. Then the cross-covariance:
+The covariance matrices of the vectors are $E\{(\mathbf{y}_1-\boldsymbol{\mu}_1){(\mathbf{y}_1-\boldsymbol{\mu}_1)}^T\}=\mathbf{L}_1\mathbf{L}_1^T$ and $E\{(\mathbf{y}_2-\boldsymbol{\mu}_2){(\mathbf{y}_2-\boldsymbol{\mu}_2)}^T\}=\mathbf{L}_2\mathbf{L}_2^T$, that utilizes that $\mathbf{z}_1$ and $\mathbf{z}_2$ are zero-mean standard Gaussian distributed vectors, therefore $E\{\mathbf{z}_1\mathbf{z}_1^T\}, E\{\mathbf{z}_2{\mathbf{z}_2}^T\}=\mathbf{I}$ and $E\{\mathbf{z}_1\mathbf{z}_2^T\}, E\{\mathbf{z}_2\mathbf{z}_1^T\}=\mathbf{0}$. Using these properties the cross-covariance can be calculated as:
 \begin{equation}
 \begin{aligned}    
     E\{(\mathbf{y}_1-\boldsymbol{\mu}_1){(\mathbf{y}_2-\boldsymbol{\mu}_2)}^T\}&=E\{\mathbf{L}_1\mathbf{z}_1(\rho\mathbf{z}_1^T\mathbf{L}_2^T+\sqrt{1-\rho^2}\mathbf{z}_2^T\mathbf{L}_2^T)\} \\ &=
@@ -105,6 +117,31 @@ The covariance matrices of the vectors are $E\{(\mathbf{y}_1-\boldsymbol{\mu}_1)
 \end{aligned}
 \end{equation}
 
-Now, $\rho\in[0;1]$ is a tuneable parameter that determines the strength of the correlation between Gaussian distributed vectors, but $\mathbf{L}_1$ and $\mathbf{L}_2$ should be determined as the square root of the actual covariance matrices. It can be always done because covariance matrices are positive semi-definite. The procedure is the same as in~\eqref{eq:decomposed-linsys} where the LOST equations were square root decomposed.
+Now, $\rho\in[0;1]$ is a tuneable parameter that determines the strength of the correlation between Gaussian distributed vectors, but $\mathbf{L}_1$ and $\mathbf{L}_2$ should be determined as the square root of the covariance matrices. It can be always done because covariance matrices are positive semi-definite. The decomposition procedure is the same as in~\eqref{eq:decomposed-linsys} where the LOST equations were square root decomposed.
 
-The state and the feature covariances are defined as Gaussian fields with different dimensions, therefore the covariance decomposition is applied to covariances existing in the pixel space, and the decomposed covariance matrices are $\mathbf{H}_x\mathbf{P}_x^-\mathbf{H}_x^T$ and $\mathbf{H}_f\mathbf{P}_f\mathbf{H}_f^T$.
+The state and the feature covariances are defined as Gaussian fields with different dimensions, therefore the covariance decomposition is applied to covariances existing in the pixel space. The covariance matrices are projected into the pixel space with their measurement matrices $\mathbf{H}_x$ and $\mathbf{H}_f$ for the state and the feature position respectively. Applying the eigenvalue decomposition on the projected covariance matrices yields:
+\begin{equation}
+\begin{aligned}
+    & \mathbf{H}_x\mathbf{P}_x\mathbf{H}_x^T=\overbrace{\left(\mathbf{V}_x\sqrt{\mathbf{D}_x}\right)}^{\mathbf{L}_x}\left(\mathbf{V}_x\sqrt{\mathbf{D}_x}\right)^T \\
+    & \mathbf{H}_f\mathbf{P}_f\mathbf{H}_f^T=\underbrace{\left(\mathbf{V}_f\sqrt{\mathbf{D}_f}\right)}_{\mathbf{L}_f}\left(\mathbf{V}_f\sqrt{\mathbf{D}_f}\right)^T \\
+\end{aligned}
+\end{equation}
+
+Using the results from above the cross-covariance can be calculated in the pixel space as:
+\begin{equation}
+    \mathbf{H}_x\mathbf{P}_{xf}\mathbf{H}_f^T=\mathbf{L}_x\mathbf{L}_f^T
+\end{equation}
+
+Finally,~\eqref{eq:optimal-kalman-gain} requires the determination of the term $\mathbf{P}_{xf}\mathbf{H}_{f}^T$, therefore the cross-covariance in the pixel state has to be transformed back into the state space at the side of the state. It can be performed with the state measurement matrix if a certain condition is met. $\mathbf{H}_x\in\mathbb{R}^{2k\times 15}$, where k is the number of features involved in the current update although, it contains a zero block matrix because of~\eqref{eq:der-pc-by-xt}:
+\begin{equation}
+    \mathbf{H}_x = \begin{bmatrix}
+    \mathbf{A}_x & \mathbf{0} \\
+    \end{bmatrix}, \quad \mathbf{A}_x\in\mathbb{R}^{2k\times 6}, \quad \mathbf{0}\in\mathbb{R}^{2k\times 9}
+\end{equation}
+
+If $k\geq 3$ condition is met, then $\mathbf{H}_x^+\mathbf{H}_x=\begin{bmatrix}\mathbf{I}_6 & \mathbf{0}_{6\times 9} \\ \mathbf{0}_{9\times 6} & \mathbf{0}_{9\times 9}\end{bmatrix}$, hence:
+\begin{equation}
+    \mathbf{P}_{xf}\mathbf{H}_f^T = \mathbf{H}_x^+\mathbf{L}_x\mathbf{L}_f^T
+\end{equation}
+
+This short detour concludes that at least three features should be involved in the updates to be able to perform the calculations.
