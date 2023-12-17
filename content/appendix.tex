@@ -1,7 +1,9 @@
 \appendix
 \chapter{Quaternion operations}\label{app:quaternion}
 
-All of the following formulas can be found in \cite{quaternion-eskf}. 
+Most of the following formulas can be found in~\cite{quaternion-eskf}. 
+
+\section{Basic definitions}
 
 The Hamiltonian-quaternion multiplication ($\otimes$) is defined as:
 \begin{equation}
@@ -29,15 +31,14 @@ The inverse of $\mathbf{q}$ quaternion is defined as:
 \begin{equation}
     \mathbf{q}^{-1}=\frac{\mathbf{q}^*}{||\mathbf{q}||^2}\Rightarrow\forall\mathbf{q},(||\mathbf{q}||=1)\rightarrow\mathbf{q}^*=\mathbf{q}^{-1},
 \end{equation}
-where the equivalence of the conjugate and the inverse of unit quaternions is similar to the unitary property of the rotation matrices, which leads to the equivalence of the transpose and inverse matrix.
+An interesting fact is that the unit length quaternion conjugate and inverse are equal, akin to the unitary property of rotation matrices, leading to the equivalence of the transpose and inverse matrices.
 
 The next important property of quaternions is that the quaternion product can be expressed in matrix form:
 \begin{equation}
-    \mathbf{q}_1\otimes\mathbf{q}_2=\begin{bmatrix}\mathbf{q}_1\end{bmatrix}_L  \mathbf{q}_2\Longleftrightarrow
-    \mathbf{q}_1\otimes\mathbf{q}_2=\begin{bmatrix}\mathbf{q}_2\end{bmatrix}_R\mathbf{q}_1,
+    \mathbf{q}_1\otimes\mathbf{q}_2=\begin{bmatrix}\mathbf{q}_1\end{bmatrix}_L=\begin{bmatrix}\mathbf{q}_2\end{bmatrix}_R\mathbf{q}_1,
     \label{eq:left-right-matrices}
 \end{equation}
-where $\begin{bmatrix}\mathbf{q}_1\end{bmatrix}_L$ and $\begin{bmatrix}\mathbf{q}_2\end{bmatrix}_R$ are the left- and right- quaternion-product matrices, which can be derived from \eqref{eq:quaternion-product} and \eqref{eq:left-right-matrices}:
+where $\begin{bmatrix}\mathbf{q}_1\end{bmatrix}_L$ and $\begin{bmatrix}\mathbf{q}_2\end{bmatrix}_R$ are the left- and right- quaternion-product matrices, which can be derived from~\eqref{eq:quaternion-product} and~\eqref{eq:left-right-matrices}:
 \begin{equation}
     \begin{bmatrix}\mathbf{q}\end{bmatrix}_L=q_w\mathbf{I}_{4\times 4}+
     \begin{bmatrix}
@@ -52,7 +53,7 @@ where $\begin{bmatrix}\mathbf{q}_1\end{bmatrix}_L$ and $\begin{bmatrix}\mathbf{q
     \label{eq:left-right-mat-def}
 \end{equation}
 
-The relation between quaternions and rotation matrices can be derived from \eqref{eq:quat-rot}, \eqref{eq:left-right-matrices}, and \eqref{eq:left-right-mat-def}:
+The relation between quaternions and rotation matrices can be derived from~\eqref{eq:quat-rot} and~\eqref{eq:left-right-matrices}:
 \begin{equation}
     \begin{bmatrix}
         0 \\ 
@@ -67,17 +68,16 @@ The relation between quaternions and rotation matrices can be derived from \eqre
 \label{eq:quat-rotmat-relation}
 \end{equation}
 
-From above the direct conversion from quaternion to rotation matrix can be obtained using \eqref{eq:left-right-mat-def} and results in:
+From above the direct conversion from quaternion to rotation matrix can be obtained using~\eqref{eq:left-right-mat-def}:
 \begin{equation}
     \mathbf{R}\{\mathbf{q}\}=(q_w^2-\mathbf{q}_v^T\mathbf{q})\mathbf{I}_{3\times 3}+2\mathbf{q}_v\mathbf{q}_v^T+2q_w\begin{bmatrix}
         \mathbf{q}_v\end{bmatrix}_\times
 \label{eq:quat2rotmat}
 \end{equation}
 
-\section{Rotation vector to quaternion formula}
-\label{app:rotvec2quat}
+\section{Rotation vector to quaternion formula}\label{app:rotvec2quat}
 
- The $\mathbf{v}=\theta\mathbf{u}$ rotation vector represents rotation around $\mathbf{u}$ axis with $\theta$ angle. The operator is denoted by $\mathbf{q}\{\mathbf{v}\}$ throughout this paper and can be written in the form of:
+The $\mathbf{v}=\theta\mathbf{u},\;\mathbf{v}\in\mathfrak{so}(3)$ rotation vector represents rotation around $\mathbf{u}$ axis with $\theta$ angle. The operator is denoted by $\mathbf{q}\{\mathbf{v}\}$ throughout this paper and can be written in the form of:
 \begin{equation}
 \begin{aligned}
     \mathbf{v}&=\theta\mathbf{u}\Rightarrow\mathbf{u}=\frac{\mathbf{v}}{||\mathbf{v}||},\;\theta=||\mathbf{v}||\Rightarrow\\&\mathbf{q}\{\mathbf{v} \}=\begin{bmatrix}
@@ -90,10 +90,9 @@ From above the direct conversion from quaternion to rotation matrix can be obtai
 \label{eq:rotvec2quat}
 \end{equation}
 
-\section{The time derivative of quaternion}
-\label{app:time-der-of-quat}
+\section{The time derivative of quaternion}\label{app:time-der-of-quat}
 
-When determining the time derivative of a vector, the goal is usually to specify the formula for the derivative in an inertial (fixed) frame with parameters known in a body (not fixed) frame which is only rotating, but not translating in the inertial frame.
+When determining the time derivative of a vector, the goal is usually to specify the formula for the derivative in an inertial (fixed) frame with parameters known in not fixed (\eg{} body) frame which is only rotating, but not translating in the inertial frame.
 
 Two approaches exist to writing the derivative of a quaternion: one is using an inertial frame-, other is using body frame- known parameters to describe the angular velocity. The angular velocity measurements are typically captured in the body frame, hence it is more practical to choose the second way. 
 
@@ -108,7 +107,7 @@ Firstly, I will give the quaternion form of the angular velocity:
 \end{aligned}
 \end{equation}
 
-Now, the next step is to write the time derivative of quaternion and use results from the previous equation:
+Now, the next step is to write the time derivative of the quaternion and use results of the above equation:
 \begin{equation}
 \begin{aligned}
     \frac{d\mathbf{q}(t)}{dt}&=\lim_{\Delta t\rightarrow 0}\frac{\mathbf{q}(t+\Delta t)-\mathbf{q}(t)}{\Delta t}=\lim_{\Delta t\rightarrow 0}\frac{\mathbf{q}_\mathcal{L} \otimes \mathbf{q}-\mathbf{q}}{\Delta t} \\ &=
@@ -123,20 +122,20 @@ Now, the next step is to write the time derivative of quaternion and use results
 
 where the distributive property of quaternion product over sum was used, and $\mathbf{q}_1$ denotes the identity quaternion\footnote{$\mathbf{q}_1=\begin{bmatrix} 1 & 0 & 0 & 0 \end{bmatrix}^T$}. It is crucial to note that, the $\mathbf{q}(t+\delta t)$ quaternion is utilized by multiplying $\mathbf{q}$ with $\mathbf{q}_\mathcal{L}$ from left because it stands for Earth-to-body rotation.
 
-\section{Jacobian of quaternion rotation with respect to the vector}
-\label{app:der-rot-by-vec}
+It is important to highlighting that $\boldsymbol{\omega}_\mathcal{L}$ is expressing the rotation of the inertial frame compared to the body frame, but the gyroscopes usually measures the rotation of the body frame compared to the inertial frame. Therefore, the sign of $\boldsymbol{\omega}_\mathcal{L}$ requires special attention.
 
-To derive the derivative respected to the vector is very easy because the rotation matrix form can be applied:
+\section{Jacobian of quaternion rotation with respect to the vector}\label{app:der-rot-by-vec}
+
+To derive the derivative with respect to the vector is very easy because the rotation matrix form can be applied:
 \begin{equation}
     \frac{\partial\mathbf{q}\otimes\mathbf{a}\otimes\mathbf{q}^*}{\partial\mathbf{a}}=\frac{\partial\begin{bmatrix}
         0 \\ \mathbf{R}\mathbf{a}
     \end{bmatrix}}{\partial \mathbf{a}}=\mathbf{R}
 \end{equation}
 
-\section{Jacobian of quaternion rotation with respect to the quaternion}
-\label{app:der-rot-by-quat}
+\section{Jacobian of quaternion rotation with respect to the quaternion}\label{app:der-rot-by-quat}
 
-The derivative of the rotation with respect to the quaternion $\mathbf{q}$ is a bit more difficult, but can be derived straightforwardly with the usage of \eqref{eq:quat-rotmat-relation} and \eqref{eq:quat2rotmat}. Using a lighter notation for the quaternion: $\mathbf{q}=\begin{bmatrix} w \\ \mathbf{v} \end{bmatrix}$, the rotation is:
+The derivative of the rotation with respect to the quaternion is a bit tricky, but can be derived straightforwardly with the usage of~\eqref{eq:quat-rotmat-relation} and~\eqref{eq:quat2rotmat}. In this section, I will use a lighter notation for the quaternion: $\mathbf{q}=\begin{bmatrix} w \\ \mathbf{v} \end{bmatrix}$. The rotated vector can be expressed with this notation as:
 \begin{equation}
     \mathbf{a}'=\mathbf{q}\otimes\mathbf{a}\otimes\mathbf{q}^*=\mathbf{R}\mathbf{a}=w^2\mathbf{a}-\mathbf{v}^T\mathbf{v}\mathbf{a}+2\mathbf{v}\mathbf{v}^T\mathbf{a}-2w\begin{bmatrix}
         \mathbf{a}
@@ -160,15 +159,13 @@ Using these results the Jacobian with respect to quaternion is:
     \end{bmatrix}
 \end{equation}
 
-\chapter{ESKF-related equations}
-\label{app:error-state-derivation}
+\chapter{ESKF-related equations}\label{app:error-state-derivation}
 
-All of the following formulas with little difference can be found in \cite{quaternion-eskf}.
+Most of the following formulas with little difference can be found in~\cite{quaternion-eskf}.
 
-\section{True rotation matrix}
-\label{app:der-true-rot}
+\section{True rotation matrix}\label{app:der-true-rot}
 
-Firstly, I would like to introduce the ODE of rotation matrices. The rotation matrices have orthogonal properties, therefore their inverse is equal to their transpose, which results in the:
+Firstly, I want to introduce the Ordinary Differential Equation (ODE) of rotation matrices. The rotation matrices have orthogonal properties, therefore their inverse is equal to their transpose, which results in:
 \begin{equation}
     \mathbf{R}\mathbf{R}^T=\mathbf{I}
 \end{equation}
@@ -178,11 +175,11 @@ Considering the time derivative of the above yields:
 \begin{aligned}
     \frac{d}{dt}(\mathbf{R}\mathbf{R}^T)=\dot{\mathbf{R}}\mathbf{R}^T+\mathbf{R}\dot{\mathbf{R}}^T&=0 \\
     \mathbf{R}\dot{\mathbf{R}}^T&=-\dot{\mathbf{R}}\mathbf{R}^T \qquad /^T \\
-    \dot{\mathbf{R}}\mathbf{R}^T&=-(\dot{\mathbf{R}}\mathbf{R}^T)^T,
+    \dot{\mathbf{R}}\mathbf{R}^T&=-{(\dot{\mathbf{R}}\mathbf{R}^T)}^T,
 \end{aligned}
 \end{equation}
 
-which means that, $\dot{\mathbf{R}}\mathbf{R}^T$ is skew-symmetric matrix, therefore there exits an $\boldsymbol{\omega}$ vector which results in:
+which means that, $\dot{\mathbf{R}}\mathbf{R}^T$ is skew-symmetric matrix, therefore an $\boldsymbol{\omega}$ vector exists for which the following holds:
 \begin{equation}
 \begin{aligned}
     \dot{\mathbf{R}}\mathbf{R}^T&=\begin{bmatrix}\boldsymbol{\omega}\end{bmatrix}_\times \qquad /\leftarrow\cdot\mathbf{R} \\
@@ -191,35 +188,34 @@ which means that, $\dot{\mathbf{R}}\mathbf{R}^T$ is skew-symmetric matrix, there
 \label{eq:rot-mat-time-der}
 \end{equation}
 
-Here, the second row represents the ODE of rotation matrices, which creates a relationship between the derivative of a rotation function, denoted as $r(t)$, and a quantity represented by $\boldsymbol{\omega}$. When considering the scenario around the origin, the certain equation simplifies to $\dot{\mathbf{R}}=\begin{bmatrix} \boldsymbol{\omega} \end{bmatrix}_\times$. Here, $\boldsymbol{\omega}$ can be interpreted as the vector representing instantaneous angular velocities. This understanding sheds light on the Lie algebra so(3), which can be seen as the space of derivatives of $r(t)$ at the origin. It also serves as the tangent space to SO(3), the special orthogonal group describing three-dimensional rotations.
+Here, the second row represents the ODE of rotation matrices, which establish a relationship between the derivative of a rotation function, denoted as $r(t)$, and a quantity represented by $\boldsymbol{\omega}$. When considering the scenario around the origin (meaning near to a reference rotation), the above equation simplifies to $\dot{\mathbf{R}}=\begin{bmatrix} \boldsymbol{\omega} \end{bmatrix}_\times$. Here, $\boldsymbol{\omega}$ can be interpreted as the vector representing instantaneous angular velocities. This understanding sheds light on the Lie algebra $\mathfrak{so}(3)$, which can be seen as the space of derivatives of $r(t)$ at the origin. It also serves as the tangent space to $\mathrm{SO}(3)$ group.
 
-If $\boldsymbol{\omega}$ is constant, \eqref{eq:rot-mat-time-der} can be time integrated as:
+If $\boldsymbol{\omega}$ is constant,~\eqref{eq:rot-mat-time-der} can be time integrated as:
 \begin{equation}
     \mathbf{R}(t)=e^{\begin{bmatrix} \boldsymbol{\omega}t \end{bmatrix}_\times}\mathbf{R}(0)
 \end{equation}
 
-The $e^{\begin{bmatrix} \boldsymbol{\omega}t \end{bmatrix}_\times}$ expression stands for the rotation matrix related to $\boldsymbol{\omega}t=\mathbf{v}$ rotation vector. This means that the error rotation vector $\delta\boldsymbol{\theta}$ has the connection between the nominal- and the true- rotation matrix:
+The $e^{\begin{bmatrix} \boldsymbol{\omega}t \end{bmatrix}_\times}$ expression stands for the rotation matrix related to $\boldsymbol{\omega}t=\mathbf{v}$ rotation vector. This means that the error rotation vector $\delta\boldsymbol{\theta}$ has the connection between the nominal and the true rotation matrix:
 \begin{equation}
     \mathbf{R}_t=\delta\mathbf{R}\mathbf{R}=e^{\begin{bmatrix}\delta\boldsymbol{\theta}\end{bmatrix}_\times}\mathbf{R},
 \end{equation}
 
-where the error rotation matrix is described as the exponential of the skew matrix of the error rotation vector, which can be written in Taylor series:
+where the error rotation matrix is described as the exponential of the skew matrix of the error rotation vector, which can be written in the Taylor series:
 \begin{equation}
     e^{\begin{bmatrix}\delta\boldsymbol{\theta} \end{bmatrix}_\times} = \sum_{k=0}^{k\rightarrow\infty}\frac{1}{k!}\begin{bmatrix}\delta\boldsymbol{\theta}\end{bmatrix}_\times^k
 \end{equation}
 
-After neglecting the second and higher order members we got the form in \eqref{eq:true-rot}.
+Neglecting the second and higher order members leads to~\eqref{eq:true-rot}.
 
-\section{Error-state equations}
-\label{app:eskf-eqs}
+\section{Error state equations}\label{app:eskf-eqs}
 
-The error-state can be expressed easily as the composition of the true-state \eqref{eq:true-state} and the nominal-state \eqref{eq:nominal-state}. As it was detailed in Chapter \ref{chap:eskf} the error state remains small therefore second-order errors are negligible.
+The error state can be expressed as the composition of the true state~\eqref{eq:true-state} and the nominal state~\eqref{eq:nominal-state}. As it was detailed in Chapter~\ref{chap:eskf} the error state remains small therefore second-order errors are negligible.
 
 \subsection{Position error}
 
 \begin{equation}
 \begin{aligned}
-    \delta\dot{\mathbf{p}}_n&=\mathbf{\dot{p}}_{n,t}-\mathbf{\dot{p}}_n=\mathbf{R}^T\left(\mathbf{I} -\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times\right) (\mathbf{v}_b-\delta\mathbf{v}_b)-\mathbf{R}^T\mathbf{v}_b \\
+    \delta\dot{\mathbf{p}}_n&=\mathbf{\dot{p}}_{n,t}-\mathbf{\dot{p}}_n=\mathbf{R}^T\left(\mathbf{I} -\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times\right) (\mathbf{v}_b+\delta\mathbf{v}_b)-\mathbf{R}^T\mathbf{v}_b \\
     &= -\mathbf{R}^T\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times\mathbf{v}_b+ \mathbf{R}^T\delta\mathbf{v}_b, 
 \end{aligned}
 \end{equation}
@@ -228,66 +224,66 @@ where nominal state and second-order error were simplified. Using the anti-commu
 
 \begin{tcolorbox}
 \begin{equation}
-    \delta\dot{\mathbf{p}}_n=\mathbf{R}^T\delta\mathbf{v}_b+\mathbf{R}^T\begin{bmatrix} \mathbf{v}_b \end{bmatrix}_\times \delta\boldsymbol{\theta}
+    \delta\dot{\mathbf{p}}_n = \mathbf{R}^T\begin{bmatrix} \mathbf{v}_b \end{bmatrix}_\times \delta\boldsymbol{\theta} + \mathbf{R}^T\delta\mathbf{v}_b
 \end{equation}
 \end{tcolorbox}
 
 \subsection{Angular error}
 
 Calculating the angular error equation requires more complicated steps because it desires to use the derivative rule of the quaternion product:
-\begin{subequations}
-    \begin{align}
-        \dot{(\delta\mathbf{q} \otimes \mathbf{q} )} &= \dot{\delta\mathbf{q}} \otimes \mathbf{q}+\delta\mathbf{q}\otimes\dot{\mathbf{q}} \\
-        &=\delta\dot{\mathbf{q}}\otimes\mathbf{q} + \delta\mathbf{q} \otimes
-        \frac{1}{2}\begin{bmatrix}
-            0 \\ \boldsymbol{\omega}
-        \end{bmatrix}\otimes\mathbf{q}
-        \label{subeq:deri-quat-prod}
-    \end{align}
-\end{subequations}
-
-In \eqref{subeq:deri-quat-prod} the definition of quaternion derivative was used for local angular velocities and earth-to-body rotation. This equation is equal to the dynamics of the true quaternion state, which is defined in \eqref{subeq:true-q}, therefore simplifying with the terminal $\mathbf{q}$ and isolating $\delta\mathbf{q}$ yields:
 \begin{equation}
 \begin{aligned}
-    2\dot{\delta\mathbf{q}}&=\begin{bmatrix} 0 \\ \boldsymbol{\omega}_t \end{bmatrix}\otimes \delta\mathbf{q} -
-    \delta\mathbf{q}\otimes \begin{bmatrix} 0 \\ \boldsymbol{\omega} \end{bmatrix} \\ &= 
+    \dot{(\delta\mathbf{q} \otimes \mathbf{q} )} &= \dot{\delta\mathbf{q}} \otimes \mathbf{q}+\delta\mathbf{q}\otimes\dot{\mathbf{q}} \\
+    &=\delta\dot{\mathbf{q}}\otimes\mathbf{q} + \delta\mathbf{q} \otimes
+    \frac{1}{2}\begin{bmatrix}
+        0 \\ -\boldsymbol{\omega}
+    \end{bmatrix}\otimes\mathbf{q}
+\end{aligned}
+\label{subeq:deri-quat-prod}
+\end{equation}
+
+In~\eqref{subeq:deri-quat-prod} the definition of thequaternion derivative was used for local angular velocities and earth-to-body rotation. This equation is equal to the dynamics of the true quaternion state, which is defined in~\eqref{subeq:true-q}, therefore simplifying with the terminal $\mathbf{q}$ and isolating $\delta\mathbf{q}$ yields:
+\begin{equation}
+\begin{aligned}
+    2\dot{\delta\mathbf{q}}&=\begin{bmatrix} 0 \\ -\boldsymbol{\omega}_t \end{bmatrix}\otimes \delta\mathbf{q} -
+    \delta\mathbf{q}\otimes \begin{bmatrix} 0 \\ -\boldsymbol{\omega} \end{bmatrix} \\ &= 
     \left(\begin{bmatrix} \mathbf{q} \end{bmatrix}_L
-    \left\{\begin{bmatrix} 0 \\ \boldsymbol{\omega}_t \end{bmatrix}\right\}-
+    \left\{\begin{bmatrix} 0 \\ -\boldsymbol{\omega}_t \end{bmatrix}\right\}-
     \begin{bmatrix} \mathbf{q} \end{bmatrix}_R
-    \left\{\begin{bmatrix} 0 \\ \boldsymbol{\omega} \end{bmatrix}\right\}\right)\delta\mathbf{q}
+    \left\{\begin{bmatrix} 0 \\ -\boldsymbol{\omega} \end{bmatrix}\right\}\right)\delta\mathbf{q}
 \end{aligned}    
 \end{equation}
 
-Converting $\delta\mathbf{q}$ to $\delta\boldsymbol{\theta}$ and performing the matrix substraction results in:
+Converting $\delta\mathbf{q}$ to $\delta\boldsymbol{\theta}$ and calculation the quaternion rotation matrices results in:
 \begin{equation}
 \begin{aligned}
     \begin{bmatrix}
-        0 \\ \dot{\delta\boldsymbol{\Theta}}
+        0 \\ \dot{\delta\boldsymbol{\theta}}
     \end{bmatrix} = 
     \begin{bmatrix}
-        0 & -(\boldsymbol{\omega}_t-\boldsymbol{\omega})^T \\
-        \boldsymbol{\omega}_t-\boldsymbol{\omega} & \begin{bmatrix}\boldsymbol{\omega}_t+\boldsymbol{\omega}\end{bmatrix}_\times
+        0 & {(\boldsymbol{\omega}_t-\boldsymbol{\omega})}^T \\
+        -(\boldsymbol{\omega}_t-\boldsymbol{\omega}) & -\begin{bmatrix}\boldsymbol{\omega}_t+\boldsymbol{\omega}\end{bmatrix}_\times
     \end{bmatrix}
     \begin{bmatrix}
-        1 \\ \frac{\delta\boldsymbol{\Theta}}{2}
-    \end{bmatrix}+O(||\delta\boldsymbol{\Theta}||^2) \\
+        1 \\ \frac{\delta\boldsymbol{\theta}}{2}
+    \end{bmatrix} + \mathcal{O}(||\delta\boldsymbol{\theta}||^2) \\
     =\begin{bmatrix}
-        0 & -\delta\boldsymbol{\omega}^T \\
-        \delta\boldsymbol{\omega} & \begin{bmatrix}2\boldsymbol{\omega}+\delta\boldsymbol{\omega}\end{bmatrix}_\times
+        0 & \delta\boldsymbol{\omega}^T \\
+        -\delta\boldsymbol{\omega} & -\begin{bmatrix}2\boldsymbol{\omega}+\delta\boldsymbol{\omega}\end{bmatrix}_\times
     \end{bmatrix}
     \begin{bmatrix}
-        1 \\ \frac{\delta\boldsymbol{\Theta}}{2}
-    \end{bmatrix}+O(||\delta\boldsymbol{\Theta}||^2)
+        1 \\ \frac{\delta\boldsymbol{\theta}}{2}
+    \end{bmatrix} + \mathcal{O}(||\delta\boldsymbol{\theta}||^2)
 \end{aligned}
 \end{equation}
 
-From the above arises a scalar- and a vector- equality. The scalar part is formed by second-order infinitesimals, which is not very useful, therefore only the vector part should be expressed. After neglecting second-order terms and substituting parameters from Table \ref{tab:eskf-states} into the nominal- and error- parameters yields:
+From the above arises a scalar- and a vector- equality. The scalar part is formed by second-order infinitesimals, which is not very useful, therefore only the vector part should be expressed. After neglecting second-order terms and substituting parameters from Table~\ref{tab:eskf-states} into the nominal and error parameters yields:
 
 \begin{tcolorbox}
 \begin{equation}
-    \dot{\delta\boldsymbol{\Theta}}=\begin{bmatrix}
+    \dot{\delta\boldsymbol{\theta}} = -\begin{bmatrix}
         \boldsymbol{\omega}_m-\boldsymbol{\beta}_\omega
-    \end{bmatrix}_\times \delta\boldsymbol{\Theta}-\delta\boldsymbol{\beta}_\omega-\boldsymbol{\eta}_\omega
+    \end{bmatrix}_\times \delta\boldsymbol{\theta} + \delta\boldsymbol{\beta}_\omega + \boldsymbol{\eta}_\omega
 \end{equation}
 \end{tcolorbox}
 
@@ -297,7 +293,7 @@ The velocity error is derived very similarly to the position error:
 \begin{equation}
     \begin{aligned}
         \dot{\delta\mathbf{v}}_b&=\dot{\mathbf{v}}_{b,t}-\dot{\mathbf{v}}_b 
-        =\mathbf{a}+\delta\mathbf{a}+\left(\mathbf{I}+\begin{bmatrix} \delta\boldsymbol{\Theta} \end{bmatrix}_\times\right)
+        =\mathbf{a}+\delta\mathbf{a}+\left(\mathbf{I}+\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times\right)
         \mathbf{R}\mathbf{g}-\begin{bmatrix} \boldsymbol{\omega}+\delta\boldsymbol{\omega} \end{bmatrix}_\times (\mathbf{v}_b+\delta\mathbf{v}_b) \\ &
         -(\mathbf{a}+\mathbf{R}\mathbf{g}-\begin{bmatrix} \boldsymbol{\omega} \end{bmatrix}_\times \mathbf{v}_b)
     \end{aligned}
@@ -306,7 +302,7 @@ The velocity error is derived very similarly to the position error:
 Simplifying with nominal state and neglecting second-order terms gives the following equation:
 \begin{equation}
     \dot{\delta\mathbf{v}}_b=\delta\mathbf{a}+\begin{bmatrix}
-        \delta\boldsymbol{\Theta}
+        \delta\boldsymbol{\theta}
     \end{bmatrix}_\times\mathbf{R}\mathbf{g}+\begin{bmatrix}
         \delta\boldsymbol{\omega}
     \end{bmatrix}_\times\mathbf{v}_b-\begin{bmatrix}
@@ -314,19 +310,18 @@ Simplifying with nominal state and neglecting second-order terms gives the follo
     \end{bmatrix}_\times\delta\mathbf{v}_b
 \end{equation}
 
-To achieve the final form of the equation, parameters inserted from Table \ref{tab:eskf-states} into the nominal- and error-state, which results in:
+To achieve the final form of the equation, parameters inserted from Table~\ref{tab:eskf-states} into the nominal and error state, which results in:
 \begin{tcolorbox}
 \begin{equation}
 \begin{aligned}
-    \delta \dot{\mathbf{v}_b}&=-\begin{bmatrix}\mathbf{R}\mathbf{g}\end{bmatrix}_\times\delta\boldsymbol{\Theta} -\begin{bmatrix}\boldsymbol{\omega}_m-\boldsymbol{\beta}_\omega\end{bmatrix}_\times\delta \mathbf{v}_b 
+    \delta \dot{\mathbf{v}_b}&=-\begin{bmatrix}\mathbf{R}\mathbf{g}\end{bmatrix}_\times\delta\boldsymbol{\theta} -\begin{bmatrix}\boldsymbol{\omega}_m-\boldsymbol{\beta}_\omega\end{bmatrix}_\times\delta \mathbf{v}_b 
     -\delta\boldsymbol{\beta}_a-\begin{bmatrix}\mathbf{v}_b \end{bmatrix}_\times\delta\boldsymbol{\beta}_\omega \\ &
     -\boldsymbol{\eta}_{a}-\begin{bmatrix}\mathbf{v}_b \end{bmatrix}_\times\boldsymbol{\eta}_{\omega}
 \end{aligned}
 \end{equation}
 \end{tcolorbox}
 
-\section{Jacobian of true quaternion with respect to the error rotation vector}
-\label{app:der-true-quat-by-error-rotvec}
+\section{Jacobian of true quaternion with respect to the error rotation vector}\label{app:der-true-quat-by-error-rotvec}
 
 The relationship between the true quaternion and the error rotation vector can be determined using the chain rule, which can be formulated as follows:
 \begin{equation}
@@ -353,28 +348,26 @@ The relationship between the true quaternion and the error rotation vector can b
 \end{aligned}
 \end{equation}
 
+\section{Jacobian of reset function (g) with respect to the error rotation vector}\label{app:der-g-by-rotvec}
 
-\section{Jacobian of reset function (g) with respect to the error rotation vector}
-\label{app:der-g-by-rotvec}
-
-The goal is to determine the derivative of \eqref{subeq:g-rotvec} by the error rotation vector $\delta\boldsymbol{\theta}$. Firstly, I aim to formalize that equation with rotation vector parameters, neglecting the constant terms:
+The goal is to determine the derivative of~\eqref{subeq:g-rotvec} with respect to the error rotation vector $\delta\boldsymbol{\theta}$. Firstly, I aim to formalize that equation with rotation vector parameters, neglecting the constant terms:
 \begin{equation}
 \begin{aligned}
-    \mathbf{q}\{\delta\boldsymbol{\theta}\} \otimes \mathbf{q}\{-\hat{\delta\boldsymbol{\theta}}\} &=  \begin{bmatrix} \mathbf{q}\end{bmatrix}_R\left\{\begin{bmatrix}
-        1 \\ -\frac{1}{2}\hat{\delta\boldsymbol{\theta}}
+    \mathbf{q}\{\delta\boldsymbol{\theta}\} \otimes \mathbf{q}\{-\delta\hat{\boldsymbol{\theta}}\} &=  \begin{bmatrix} \mathbf{q}\end{bmatrix}_R\left\{\begin{bmatrix}
+        1 \\ -\frac{1}{2}\delta\hat{\boldsymbol{\theta}}
     \end{bmatrix}\right\} 
     \begin{bmatrix} 1 \\ \frac{1}{2}\delta\boldsymbol{\theta} \end{bmatrix} + \mathcal{O}(||\delta\boldsymbol{\theta}||^2) \\
     &=
     \begin{bmatrix}
-        1 & \frac{1}{2}\hat{\delta\boldsymbol{\theta}}^T \\
-        \frac{1}{2}\hat{\delta\boldsymbol{\theta}} & \mathbf{I}+\begin{bmatrix}
-            \frac{1}{2}\hat{\delta\boldsymbol{\theta}}
+        1 & \frac{1}{2}\delta\hat{\boldsymbol{\theta}}^T \\
+        \frac{1}{2}\delta\hat{\boldsymbol{\theta}} & \mathbf{I}+\begin{bmatrix}
+            \frac{1}{2}\delta\hat{\boldsymbol{\theta}}
         \end{bmatrix}_\times 
     \end{bmatrix}  \begin{bmatrix} 1 \\ \frac{1}{2}\delta\boldsymbol{\theta} \end{bmatrix}+\mathcal{O}(||\delta\boldsymbol{\theta}||^2)  \\ &=
     \begin{bmatrix}
-        1+\frac{1}{4}\hat{\delta\boldsymbol{\theta}}^T\delta\boldsymbol{\theta} \\
-        \frac{1}{2}\hat{\delta\boldsymbol{\theta}}+\frac{1}{2}\left(\mathbf{I}+\begin{bmatrix}
-            \frac{1}{2}\hat{\delta\boldsymbol{\theta}}
+        1+\frac{1}{4}\delta\hat{\boldsymbol{\theta}}^T\delta\boldsymbol{\theta} \\
+        \frac{1}{2}\delta\hat{\boldsymbol{\theta}}+\frac{1}{2}\left(\mathbf{I}+\begin{bmatrix}
+            \frac{1}{2}\delta\hat{\boldsymbol{\theta}}
         \end{bmatrix}_\times\right)\delta\boldsymbol{\theta}
     \end{bmatrix}+\mathcal{O}(||\delta\boldsymbol{\theta}||^2) 
 \end{aligned}
@@ -385,18 +378,18 @@ This is equal to the error quaternion after the reset. Denotating the error rota
     \begin{bmatrix}
         1 \\ \frac{1}{2}\delta\boldsymbol{\theta}^+
     \end{bmatrix}=\begin{bmatrix}
-        1+\frac{1}{4}\hat{\delta\boldsymbol{\theta}}^T\delta\boldsymbol{\theta} \\
-        \frac{1}{2}\hat{\delta\boldsymbol{\theta}}+\frac{1}{2}\left(\mathbf{I}+\begin{bmatrix}
-            \frac{1}{2}\hat{\delta\boldsymbol{\theta}}
+        1+\frac{1}{4}\delta\hat{\boldsymbol{\theta}}^T\delta\boldsymbol{\theta} \\
+        \frac{1}{2}\delta\hat{\boldsymbol{\theta}}+\frac{1}{2}\left(\mathbf{I}+\begin{bmatrix}
+            \frac{1}{2}\delta\hat{\boldsymbol{\theta}}
         \end{bmatrix}_\times\right)\delta\boldsymbol{\theta}
     \end{bmatrix}+\mathcal{O}(||\delta\boldsymbol{\theta}||^2) 
 \end{equation}
 
-The above equation splits into a scalar- and a vector- part, where the scalar part is formed by second-order infinitesimals, therefore it is not very useful, additionally the constant member in the original \eqref{subeq:g-rotvec} equation is responsible for exactly this neglect. Only considering the vector part, the Jacobian:
+The above equation splits into a scalar- and a vector- part, where the scalar part is formed by second-order infinitesimals, therefore it is not very useful. Only considering the vector part, the Jacobian is:
 \begin{equation}
     \frac{\partial g(\delta\boldsymbol{\theta})}{\partial\delta\boldsymbol{\theta}}=
     \frac{\partial\delta\boldsymbol{\theta}^+}{\partial\delta\boldsymbol{\theta}}=
-    \frac{\partial\left(\hat{\delta\boldsymbol{\theta}}+\left(\mathbf{I}+\begin{bmatrix} \frac{1}{2}\hat{\delta\boldsymbol{\theta}} 
+    \frac{\partial\left(\delta\hat{\boldsymbol{\theta}}+\left(\mathbf{I}+\begin{bmatrix} \frac{1}{2}\delta\hat{\boldsymbol{\theta}} 
     \end{bmatrix}_\times\right)\delta\boldsymbol{\theta}\right)}{\partial\delta\boldsymbol{\theta}} =
-    \mathbf{I}+\begin{bmatrix} \frac{1}{2}\hat{\delta\boldsymbol{\theta}} \end{bmatrix}_\times
+    \mathbf{I}+\begin{bmatrix} \frac{1}{2}\delta\hat{\boldsymbol{\theta}} \end{bmatrix}_\times
 \end{equation}

@@ -9,7 +9,7 @@
     The velocity vector $\mathbf{v}$ is body-fixed in my approach, making it $\mathbf{v}_b$. On the contrary, the mentioned literature uses an inertial frame fixed velocity vector.
     
     \item 
-    In their method, the rotation described by quaternion $\mathbf{q}$ and rotation matrix $\mathbf{R}\{\mathbf{q}\}\equiv\mathbf{R}$\footnote{In this paper, $\mathbf{R}\{\mathbf{q}\}$ detones the rotation matrix obtained from quaternion.} stands for the body-to-earth rotation, while in this paper rotation stands for the inverse transformation, earth-to-body transformation to match the conventional Euler angle representation of rotation commonly applied in aerospace. This impacts the formulation of the mathematical equations, but in most cases, the equations have symmetrical properties.
+    In their method, the rotation described by quaternion $\mathbf{q}$ and rotation matrix $\mathbf{R}\{\mathbf{q}\}\equiv\mathbf{R}$\footnote{In this paper, $\mathbf{R}\{\mathbf{q}\}$ denotes the rotation matrix obtained from quaternion.} stands for the body-to-earth rotation, while in this paper rotation stands for the inverse transformation, earth-to-body transformation to match the conventional Euler angle representation of rotation commonly applied in aerospace. This impacts the formulation of the mathematical equations, but in most cases, the equations have symmetrical properties.
 \end{enumerate}
 
 \section{In general about the Kalman filter}
@@ -101,16 +101,16 @@ The states are divided in such a way that the large-signal dynamics are integrat
     In~\eqref{eq:true-IMU} the error part of the biases $\delta\boldsymbol{\beta}_a$ and $\delta\boldsymbol{\beta}_\omega$ account for the slow variation of biases over time since these parameters are typically temperature-dependent. They are also represented with Gaussian white noises.
 
     \item 
-    In the context of 3-D rotations, the unit quaternions and rotation matrices belong to the SO (3)\footnote{Special Orthogonal} group. The skew-symmetric matrix of rotation vector $\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times$ is part of the $\mathfrak{so}(3)$ Lie Algebra and in~\cite{quaternion-eskf} they propose that the exponential map is a powerful mathematical tool to map it into $\mathrm{SO}(3)$ space, therefore the error rotation matrix $\delta\mathbf{R}$ can be expressed with the rotation vector as in Table~\ref{tab:eskf-states}. The value of $\mathbf{R}_t$ can be determined by expanding $\delta\mathbf{R}$ into Taylor series, and neglecting the second- and higher-order terms:
+    In the context of 3-D rotations, the unit quaternions and rotation matrices belong to the $\mathrm{SO}(3)$ group, where $\mathrm{SO}(3)$ represents Special Orthogonal group in 3-D. The skew-symmetric matrix of rotation vector $\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times$ belongs to the $\mathfrak{so}(3)$ Lie Algebra and in~\cite{quaternion-eskf} they propose that the exponential map is a powerful mathematical tool to map it into $\mathrm{SO}(3)$ space, therefore the error rotation matrix $\delta\mathbf{R}$ can be expressed with the rotation vector as in Table~\ref{tab:eskf-states}. The value of $\mathbf{R}_t$ can be determined by expanding $\delta\mathbf{R}$ into the Taylor series, and neglecting the second- and higher-order terms:
     \begin{equation}
          \mathbf{R}_t=\delta\mathbf{R}\mathbf{R}=\left(\mathbf{I} +\begin{bmatrix} \delta\boldsymbol{\theta} \end{bmatrix}_\times\right) \mathbf{R} + \mathcal{O}(||\delta\boldsymbol{\theta}||^2),
     \label{eq:true-rot}
     \end{equation}    
-    where $\mathcal{O}(||\delta\boldsymbol{\theta}||^2)$ stands for the negligable terms. The calculations related to~\eqref{eq:true-rot} are detailed in Appendix~\ref{app:der-true-rot}.
+    where $\mathcal{O}(||\delta\boldsymbol{\theta}||^2)$ stands for the negligible terms. The calculations related to~\eqref{eq:true-rot} are detailed in Appendix~\ref{app:der-true-rot}.
 \end{itemize} 
 
 
-\subsection*{True-state}
+\subsection*{True state}
 
 The dynamics of the true state can be described by the following equations:
 
@@ -206,7 +206,7 @@ The position is integrated both from velocity and acceleration, and the rotation
 \end{align}\label{eq:error-eq-discrete}
 \end{subequations}
 
-$\boldsymbol{\theta}_i,\mathbf{v}_{b,i},\mathbf{a}_i$ and $\boldsymbol{\omega}_i$ are the random impulses which form the stochastic part of the equation. Those noises that appear only negatively in the equations can be changed to positive freely as the probability of negative or positive white noise components is the same. Their covariance matrices are integrated as (see~\cite{quaternion-eskf} Appendix E for details):
+$\boldsymbol{\theta}_i$, $\mathbf{v}_{b,i}$, $\mathbf{a}_i$ and $\boldsymbol{\omega}_i$ are the random impulses that form the stochastic part of the equation. Those noises that appear only negatively in the equations can be changed to positive freely as the probability of negative or positive white noise components is the same. Their covariance matrices are integrated as (see~\cite{quaternion-eskf} Appendix E for details):
 \begin{equation}
 \begin{aligned}
     \boldsymbol{\Theta}_i&=\sigma_{\eta_\omega}^2\Delta t^2\mathbf{I} \quad [rad^2] \\
@@ -215,7 +215,7 @@ $\boldsymbol{\theta}_i,\mathbf{v}_{b,i},\mathbf{a}_i$ and $\boldsymbol{\omega}_i
     \boldsymbol{\Omega}_i&=\sigma_{\beta_\omega}^2\Delta t\mathbf{I} \quad [rad^2/s^2],
 \end{aligned}\label{eq:noises}
 \end{equation}
-where $\sigma_{\eta_a}$, $\sigma_{\eta_\omega}$, $\sigma_{\beta_a}$ and $\sigma_{\beta_\omega}$ are the deviations of acceleration, gyroscope measurement noise and the slowly varying bias impacts.
+where $\sigma_{\eta_a}$, $\sigma_{\eta_\omega}$, $\sigma_{\beta_a}$, and $\sigma_{\beta_\omega}$ are the deviations of acceleration, gyroscope measurement noise, and the slowly varying bias impacts.
 
 \section{Measurement equation}
 
@@ -229,7 +229,7 @@ The measurement equation is based on the fundamental concept that the system can
     \end{bmatrix}, 
 \end{equation}
 
-where $\mathbf{p}_n^f$ denotes the feature position in NED frame. The transformation above requires the usage of both the state ($\mathbf{p}_n^b, \mathbf{q}_n^b$) and feature position $\mathbf{p}_n^f$ and it is worth highlighting that the feature positions are not known a priori unless a visual map of the surroundings is available onboard.
+where $\mathbf{p}_n^f$ denotes the feature position in the NED frame. The transformation above requires the usage of both the state ($\mathbf{p}_n^b, \mathbf{q}_n^b$) and feature position $\mathbf{p}_n^f$ and it is worth highlighting that the feature positions are not known a priori unless a visual map of the surroundings is available onboard.
 
 \section{ESKF framework}
 
@@ -315,11 +315,11 @@ Using formulas above and denoting equations in~\eqref{eq:nom-eq-discrete} with $
 \end{align}
 \end{subequations}
 
-where $\delta\hat{\mathbf{x}}$ is the mean of the error state, therefore $\delta\mathbf{x}\sim\mathcal{N}(\delta\hat{\mathbf{x}},\mathbf{P})$, but when a measurement update is performed and the error was injected into the nominal state it gets reset, therefore accounting for the error only involves the propagation of the covariance matrix.
+where $\delta\hat{\mathbf{x}}$ is the mean of the error state, therefore $\delta\mathbf{x}\sim\mathcal{N}(\delta\hat{\mathbf{x}},\;\mathbf{P})$, but when a measurement update is performed and the error is injected into the nominal state it gets reset, therefore accounting for the error only involves the propagation of the covariance matrix.
 
 \subsection{Update step}
 
-In this section, I focus on how the measurement Jacobian of the error state is calculated. The most straightforward approach to do that for a feature point involves the utilization of the chain rule. First, the Jacobian of the pixel measurement with respect to the feature point ($\mathbf{J}\in\mathbb{R}^{2\times3}$) has to be computed, then the Jacobian of the feature point with respect to the true state ($\mathbf{P}_{x_t}\in\mathbb{R}^{3\times 16}$) and finally the Jacobian of the true state with respect to the error state ($\mathbf{X}_{\delta x}\in\mathbb{R}^{16\times 15}$). So the Jacobian of the measurement with respect to the error state:
+In this section, I focus on how the measurement Jacobian of the error state is calculated. The most straightforward approach to do that for a feature point involves the utilization of the chain rule. First, the Jacobian of the pixel measurement with respect to the feature point ($\mathbf{J}\in\mathbb{R}^{2\times3}$) has to be computed, then the Jacobian of the feature point with respect to the true state ($\mathbf{P}_{x_t}\in\mathbb{R}^{3\times 16}$), and finally the Jacobian of the true state with respect to the error state ($\mathbf{X}_{\delta x}\in\mathbb{R}^{16\times 15}$). So the Jacobian of the measurement with respect to the error state:
 \begin{equation}
     \mathbf{H}_x=\frac{\partial h(\mathbf{p}_c^f)}{\partial\delta\mathbf{x}}= 
     \frac{\partial h(\mathbf{p}_c^f)}{\partial\mathbf{p}_c^f}
@@ -329,7 +329,7 @@ In this section, I focus on how the measurement Jacobian of the error state is c
 
 \subsection*{Jacobian of the pixel measurements with respect to the feature point}
 
-The Jacobian of the projection is calculated by linearizing~\eqref{eq:pinhole-projection}. The transformation results in a 3-D vector, but the 3$^{rd}$ coordinate is always equal to the focal length and its derivative leads to zeros, which contain no information, hence it is neglected. It shows the property that we lost a bit of information during the projection.
+The Jacobian of the projection is calculated by linearizing~\eqref{eq:pinhole-projection}. The transformation results in a 3-D vector, but the 3$^{rd}$ coordinate is always equal to the focal length, and its derivative leads to zeros, which contain no information, hence it is neglected. It shows the property that we lost a bit of information during the projection.
 \begin{equation}
     \mathbf{J}=\begin{bmatrix}
         \frac{\partial h_1(\mathbf{p}_c^f)}{\partial x} & \frac{\partial h_1(\mathbf{p}_c^f)}{\partial y} & \frac{\partial h_1(\mathbf{p}_c^f)}{\partial z} \\
@@ -382,7 +382,7 @@ The whole derivative by the true state results in a $3\times 16$ matrix:
     \label{eq:der-pc-by-xt}
 \end{equation}
 
-\subsection*{Jacobian of the true-state with respect to the error state}
+\subsection*{Jacobian of the true state with respect to the error state}
 
 Finally, the Jacobian of the true state with respect to the error state should be determined. All derivatives yield the identity block $\mathbf{I}_3$, except for the quaternion, this can be understood by examining the composition of individual states in Table~\ref{tab:eskf-states}. The Jacobian of the quaternion with respect to the rotation vector results in:
 \begin{equation}

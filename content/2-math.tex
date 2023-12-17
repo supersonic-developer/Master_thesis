@@ -3,17 +3,18 @@
 \lettrine{B}{efore} I delve into the details of the visual-inertial relative navigation algorithm, it is important to establish theoretical foundations. This chapter summarizes the mathematical preliminaries that are essential for understanding how the algorithm works. It covers key concepts about coordinate systems and camera projection and introduces an alternative method of rotation representation. 
 
 In this paper, filter-related mathematics uses 3+1 frames: Earth (E), node (N), body (B), and camera (C) frame. The purpose of the node frame is mentioned later which is connected to relative navigation applications, but currently, it is not applied in my approach. The Earth alias localization, body, and camera frames are utilized in the calculations of the algorithm. The frames are shown in Figure~\ref{fig:coord-sys}. 
+
 \begin{figure}[!ht]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/Coord_sys.png}
     \caption{Applied coordinate systems}\label{fig:coord-sys}
 \end{figure}
 
-In the following, I use n, b, and c notation for inertial, body, and camera frames respectively.
+In the following, I employ notations n, b, and c as a subscript for vectors to denote their representation in the inertial, body, and camera frames respectively, while the superscript indicates the origin of the respective coordinate system.
 
 \section{Navigation frames}
 
- The purpose of using different kinds of frames is to facilitate the kinematic modeling of UAVs. To effectively study UASs, it is crucial to comprehend the relative orientation and translation of different coordinate systems. Multiple frames are required for several reasons:
+The purpose of using different kinds of frames is to facilitate the kinematic modeling of UAVs. To effectively study UASs, it is crucial to comprehend the relative orientation and translation of different coordinate systems. Multiple frames are required for several reasons:
 \begin{itemize}
     \item 
     The motion of the aircraft is most easily described in a body-fixed frame, however, Newton's equations of motion are derived relative to an inertial reference frame.
@@ -25,9 +26,9 @@ In the following, I use n, b, and c notation for inertial, body, and camera fram
     Finally, the mission requirements of the aircraft, \eg{} flight path require a global (absolute) frame.
 \end{itemize}
 
-\subsection{North-East-Down reference frame}
+\subsection{North-East-Down (NED) reference frame}
 
-The NED coordinate system has emerged as a standard in UAV applications over limited distances, typically spanning a few kilometers. Notably, this reference frame is conventionally anchored to a stationary point on Earth, affording its use as an inertial reference frame in analytical computations\footnote{If flight trajectories remain short the curvature of the Earth can be neglected.}. The NED frame can be seen in Figure~\ref{fig:NED} compared to the globe and Earth-centered Earth-fixed (ECEF) coordinate system. Consistent with its name, the NED system aligns its X-axis with the geographic north, its Y-axis with the east, and its Z-axis points inwards to the Earth. Its X-Y plane is the local tangent plane of the Earth's ellipsoid.
+The NED coordinate system has emerged as a standard in UAV applications over limited distances, typically spanning a few kilometers. Notably, this reference frame is conventionally anchored to a stationary point on Earth, affording its use as an inertial reference frame in analytical computations\footnote{If flight trajectories remain short the curvature of the Earth can be neglected.}. The NED frame can be seen in Figure~\ref{fig:NED} compared to the globe and Earth-centered Earth-fixed (ECEF) coordinate system. Consistent with its name, the NED system aligns its X-axis with the geographic north, its Y-axis with the east, and its Z-axis pointing inwards to the Earth. Its X-Y plane is the local tangent plane of the Earth's ellipsoid.
 
 \begin{figure}[!ht]
     \centering
@@ -43,7 +44,7 @@ In this paper, since there is no node frame I am denoting the applied inertial f
 
 In the kinematic equations, quantities are usually described in inertial or body frame, therefore it is crucial to understand properly how the body frame is defined and how the relation to the inertial frame can be accounted for. The origin is aligned with the center of the aircraft's mass, and it is worth mentioning the fact in realizations the IMU is placed nearby. The axes of the body frame are defined as follows: the X-axis points out the nose of the aircraft, the Y-axis points out the right half wing and the Z-axis points downwards.
 
-Once the coordinate system has been defined, it is necessary to mention the relation to the inertial frame. The most commonly applied approach to obtain the orientation of the aircraft in the NED system is to express it with Euler angles which means three rotations one after another. Defining the Euler angles I use the same terminology as in~\cite{EKF-UAS-2}, their approach is to introduce three additional coordinate systems: vehicle, vehicle-1, and vehicle-2. They are shown in Figure~\ref{fig:vehicle}-\ref{fig:body}.
+Once the coordinate system has been defined, it is necessary to mention the relation to the inertial frame. The most applied approach to obtain the orientation of the aircraft in the NED system is to express it with Euler angles which means three rotations one after another. Defining the Euler angles, I use the same terminology as in~\cite{EKF-UAS-2}, their approach is to introduce three additional coordinate systems: vehicle, vehicle-1, and vehicle-2. They are shown in Figure~\ref{fig:vehicle}-\ref{fig:body}.
 
 \begin{figure}[!ht]
     \centering
@@ -70,7 +71,7 @@ Once the coordinate system has been defined, it is necessary to mention the rela
     \caption{Frames to define Euler angles (\cite{EKF-UAS-2}: pages 13--15, Figures 2.4--2.7)}
 \end{figure}
 
-The vehicle frame is the NED coordinate system with shifted origin into the center of mass, vehicle-1 frame is rotated with the yaw angle ($\psi$)  around the Z-axis of the vehicle frame, vehicle-2 frame is rotated with pitch angle ($\theta$) around the Y-axis of vehicle-1 frame, and body frame is rotated with roll angle ($\phi$) around the X-axis of vehicle-2 frame. To summarize, the resulting rotation can be defined as:
+The vehicle frame is the NED coordinate system with shifted origin into the center of mass, the vehicle-1 frame is rotated with the yaw angle ($\psi$)  around the Z-axis of the vehicle frame, and the vehicle-2 frame is rotated with pitch angle ($\theta$) around the Y-axis of vehicle-1 frame, and body frame is rotated with roll angle ($\phi$) around the X-axis of vehicle-2 frame. To summarize, the resulting rotation can be defined as:
 
 \begin{equation}
 \begin{aligned}
@@ -96,7 +97,7 @@ Finally, I want to mention the usage of homogeneous transformation which is wide
     \label{eq:hom-e2b}
 \end{equation}
 
-The transformation can be applied on general 3-D vector $\mathbf{r}_b$ as:
+The transformation can be applied to a general 3-D vector $\mathbf{r}_b$ as:
 \begin{equation}
     \mathbf{H}_{NB}\begin{bmatrix}
         \mathbf{r}_b \\ 1
@@ -118,7 +119,7 @@ It is important to say a few words about camera-related frames and transformatio
 
 To mathematically model the projection, the camera's intrinsic and extrinsic parameters have to be utilized. For the pinhole model, the intrinsic parameters of the camera are the focal length ($f$), the principal point ($p_x$, $p_y$), and a constraint for the visibility that is described with the field of view (FOV) or image size. Extrinsic parameters represent the position and orientation of the camera in the inertial frame.
 
-Generally, the camera can not be placed in the body center, therefore the transformation requires a position that is described compared to the body frame and detonated as $\mathbf{p}_{b}^c$. Regarding the orientation, an at least partially downward-facing camera is mandatory, whereas the navigation happens concerning the surroundings thus introducing a rotation around the Y-axis of the body frame. Furthermore, the axes of the camera system are defined differently, than the axes of the body frame, therefore an additional operation is essential to change the axes. Figure~\ref{fig:camera-system} shows the camera frame and the image plane. 
+Generally, the camera can not be placed in the body center, therefore the transformation requires a position that is described compared to the body frame and denoted as $\mathbf{p}_{b}^c$. Regarding the orientation, an at least partially downward-facing camera is mandatory, whereas the navigation happens concerning the surroundings thus introducing a rotation around the Y-axis of the body frame. Furthermore, the axes of the camera system are defined differently, than the axes of the body frame, therefore an additional operation is essential to change the axes. Figure~\ref{fig:camera-system} shows the camera frame and the image plane. 
 
 \begin{figure}[!ht]
     \centering
@@ -126,7 +127,7 @@ Generally, the camera can not be placed in the body center, therefore the transf
     \caption{Camera and image system (\cite{camera-matrix-slide}: page 7)}\label{fig:camera-system}
 \end{figure}
 
-The axes swap operation is readily apparent considering how the rotated body frame and camera frame axes are defined. The transformation is outlined as: $\mathbf{i}_b'=\mathbf{k}_c$, $\mathbf{j}_b'=\mathbf{i}_c$ and $\mathbf{k}_b'=\mathbf{j}_c$, where $\mathbf{i}$, $\mathbf{j}$ and $\mathbf{k}$ are unit vectors along X-, Y- and Z-axis respectively. Utilizing the linear transformations the whole transformation from body-to-camera frame:
+The axes swap operation is readily apparent considering how the rotated body frame and camera frame axes are defined. The transformation is outlined as $\mathbf{i}_b'=\mathbf{k}_c$, $\mathbf{j}_b'=\mathbf{i}_c$, and $\mathbf{k}_b'=\mathbf{j}_c$, where $\mathbf{i}$, $\mathbf{j}$, and $\mathbf{k}$ are unit vectors along the X-, Y- and Z-axis respectively. Utilizing the linear transformations the whole transformation from body-to-camera frame:
 \begin{equation}
 \begin{aligned}
     \mathbf{T}_{CB}=\mathbf{S}\mathbf{R}_{CB}(y,\beta) &= \begin{bmatrix}
@@ -146,9 +147,9 @@ The axes swap operation is readily apparent considering how the rotated body fra
 \end{aligned}
 \end{equation}
 
-where $\mathbf{S}$ stands for the axes swapping transformation, and $\mathbf{R}_{CB}$ represents the camera rotation with a $\beta$ angle around the Y-axis (for downward facing camera it should be negative). The resulting matrix is still unitary matrix, therefore $\mathbf{T}_{BC}=\mathbf{T}_{CB}^T$.
+where $\mathbf{S}$ stands for the axis swapping transformation, and $\mathbf{R}_{CB}$ represents the camera rotation with a $\beta$ angle around the Y-axis (for a downward-facing camera it should be negative). The resulting matrix is still unitary, therefore $\mathbf{T}_{BC}=\mathbf{T}_{CB}^T$.
 
-Summarising both translational and rotational effects the whole camera-to-NED transformation is:
+Summarising both translational and rotational effects of the whole camera-to-NED transformation is:
 \begin{equation}
 \begin{aligned}
     \mathbf{H}_{NC}&=\mathbf{H}_{NB}\mathbf{H}_{BC} = 
@@ -172,11 +173,11 @@ Summarising both translational and rotational effects the whole camera-to-NED tr
 \label{eq:body2camera}
 \end{equation}
 
-Finally, I mention a few words about the image coordinate system. As it can be seen in Figure~\ref{fig:camera-system}, the axes of the image system are aligned with the camera system's X and Y axes but shifted with the principal point. The principal point is usually near to the center of the image and shifting with it results in a top left corner origin of the pixel coordinate system. This is because the pinhole projection produces an inverted image, but it's detailed in the next section.
+Finally, I mention a few words about the image coordinate system. As can be seen in Figure~\ref{fig:camera-system}, the axes of the image system are aligned with the camera system's X and Y axes but shifted with the principal point. The principal point is usually near the center of the image and shifting with it results in a top left corner origin of the pixel coordinate system. This is because the pinhole projection produces an inverted image, but it's detailed in the next section.
 
 \section{Pinhole camera projection}
 
-The pinhole camera model serves as a mathematical representation for the projection $h(\mathbf{p}_c^f)$, which results in the pixel measurement. This model is articulated within the camera frame and necessitates intrinsic parameters of the camera and the feature point position $\mathbf{p}_c^f$ in the camera frame. 
+The pinhole camera model serves as a mathematical representation of the projection $h(\mathbf{p}_c^f)$, which results in the pixel measurement. This model is articulated within the camera frame and necessitates intrinsic parameters of the camera and the feature point position $\mathbf{p}_c^f$ in the camera frame. 
 
 The pinhole model framework describes the aperture of the camera as a point, therefore the lens distortion errors are neglected~\cite{pinhole_wikipedia, stanford_camera_models}. In reality, the transformation yields an inverted image behind the $z=0$ plane, but it is more illustrative to depict it in front of the $z=0$ plane as can be seen in Figure~\ref{fig:camera-system}. Mathematically the two interpretations will produce equivalent solutions. The parameters of the model: 
 
@@ -214,13 +215,13 @@ First applying the normalization, then using~\eqref{eq:camera-matrix} the whole 
     \label{eq:pinhole-projection}
 \end{equation}
 
-where $\overline{\mathbf{u}}$ is the resulting measurement which pixel coordinates are $u$ and $v$ and its z coordinate equals the focal length since the vector points onto the image. The interpretation range of the pinhole model contains every $\mathbf{p}_c^f$ which is not in the z=0 plane, but as a final point, I want to emphasize that the finite image size (W, H) or the FOV angles constraint have to be applied for real cameras. The image size and FOV angles result in the same constraint in fact with known focal length and constraint they can be calculated from each other.
+where $\overline{\mathbf{u}}$ is the resulting measurement which pixel coordinates are $u$ and $v$ and its z coordinate equals the focal length since the vector points onto the image. The interpretation domain of the pinhole model contains all $\mathbf{p}_c^f$ for which $p_{c,z}^f>0$, but as a final point, I want to emphasize that the finite image size (W, H) or the FOV angles constraint has to be applied for real cameras. The image size and FOV angles result in the same constraint in fact with known focal length and constraint they can be calculated from each other.
 
 \section{Quaternions}
 
 Before embarking on the ESKF, it is worth mentioning a few words about quaternions. Originally formulated in~\cite{quaternions} by Sir William Rowan in the 19th century. Nowadays, quaternions have found extensive applications in various domains, including computer graphics, robotics, and aerospace engineering.
 
-In this paper, I adopt the same mathematical representation for quaternions as described in~\cite{quaternion-eskf}. Quaternions belong to the extended complex number space, which includes two additional imaginary units, namely $j$ and $k$, in addition to the real and imaginary unit $i$. As a result, quaternions can be represented by four-component vectors:
+In this paper, I adopt the same mathematical representation for quaternions as described in~\cite{quaternion-eskf}. Quaternions belong to the extended complex number space, which includes two additional imaginary units, namely $j$, and $k$, in addition to the real and imaginary unit $i$. As a result, quaternions can be represented by four-component vectors:
 
 \begin{equation}
     \mathbf{q} = a + b\mathbf{i} + c\mathbf{j} + d\mathbf{k} = \begin{bmatrix}
@@ -252,7 +253,7 @@ where $\mathbf{u}$ is the rotation axis and $\theta$ is the angle of the rotatio
 \end{equation}
 where $\otimes$ is the Hamiltonian-quaternion multiplication, and $\mathbf{q}^*$ is the conjugate of $\mathbf{q}$. 
 
-The composition of two rotations, described by $\mathbf{q}_{AB}$ and $\mathbf{q}_{BC}$ quaternions can also be evaluated using quaternion product:
+The composition of two rotations, described by $\mathbf{q}_{AB}$ and $\mathbf{q}_{BC}$ quaternions can also be evaluated using the quaternion product:
 \begin{equation}
     \mathbf{q}_{AC}=\mathbf{q}_{AB}\otimes\mathbf{q}_{BC}
 \end{equation}

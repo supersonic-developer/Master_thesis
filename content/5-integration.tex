@@ -8,13 +8,17 @@ The derivation of the Kalman gain is based on~\cite{discrete_kalman_tutorial}, b
 
 \subsection{The error propagation from measurement to measurement}
 
-The error propagation is described in~\eqref{eq:error-state-dyn}, but usually, there is more than one prediction step between two measurement updates, therefore extending this equation for N predictions yields:
+The real error propagation is described in~\eqref{eq:error-state-dyn}, but the actual error propagation is presented in~\eqref{eq:err-state-dyn}. There is usually more than one prediction step between two measurement updates, therefore extending this equation for N predictions yields:
 \begin{subequations}
 \begin{align}
+    & \begin{aligned}
     \delta\mathbf{x}_{k+N} &= \left(\prod_{j=0}^{N-1}\mathbf{F}_{x,k+j}\right)\delta\mathbf{x}_k + \left[\sum_{j=0}^{N-1}\left(\prod_{l=j+1}^{N-1}\mathbf{F}_{x,k+l} \right) \mathbf{F}_{i,k+j} \mathbf{i}_{k+j}\right] \\ &= \mathbf{PF}_x^N\delta\mathbf{x}_k + \mathbf{SF}_i^N \mathbf{i} 
-    \label{eq:true-err-state}
+    \end{aligned}\label{eq:true-error-state-prop} \\ &
+    \delta\hat{\mathbf{x}}_{k+N}^- = \left( \prod_{j=0}^{N-1}\mathbf{F}_{x,k+j} \right) \delta\hat{\mathbf{x}}_k = \mathbf{PF}_x^N\delta\hat{\mathbf{x}}_k,\label{eq:est-error-state-prop}
 \end{align}
 \end{subequations}
+
+where $^-$ denotes the a priori estimate.
 
 The aforementioned equations yield a crucial insight, that the error propagation can be divided into two components. The first concerns the propagation of the previous a posteriori error state, denoted as $\mathbf{PF}_x^N\delta\mathbf{x}_k$, while the second is associated with accounting for the integration of Additive White Gaussian Noise (AWGN) within the system, denoted as $\mathbf{SF}_i^N \mathbf{i}$.
 
@@ -33,37 +37,45 @@ where the linearized error approximation was utilized, and $\mathbf{H}_{f,k+N}$ 
     \frac{\partial\mathbf{p}_c^f}{\partial\mathbf{p}_n^f}=\mathbf{R}_{CN}
 \end{equation}
 
-To form the residual, the measurements have to be predicted ($\hat{\mathbf{z}}_{k+N}$), but at this point only the nominal states ($\mathbf{x}_{k+N}$, $\mathbf{p}_n^f$) are available:
+To form the residual, the measurements have to be predicted ($\hat{\mathbf{z}}_{k+N}$), but at this point only the nominal states ($\mathbf{x}_{k+N}$, $\mathbf{p}_n^f$) and the approximated error states ($\delta\hat{\mathbf{x}}_{k+N}^-$, $\delta\hat{\mathbf{p}}_n^f$) are available:
 \begin{equation}
-    \hat{\mathbf{z}}_{k+N} = h(\mathbf{x}_{k+N}, \mathbf{p}_n^f)
+    \hat{\mathbf{z}}_{k+N} = h(\mathbf{x}_{k+N},\mathbf{p}_{n}^f) + \mathbf{H}_{x,k+N}\delta\hat{\mathbf{x}}_{k+N}^-+\mathbf{H}_{f, k+N}\delta\hat{\mathbf{p}}_{n}^f 
 \end{equation}
 
-The Kalman filter forms the new estimation ($\delta\hat{\mathbf{x}}_{k+N}$) as a composition of the a priori state estimate and the residual $\mathbf{r}_{k+N}=\mathbf{z}_{k+N}-\hat{\mathbf{z}}_{k+N}$. However, it has been already discussed that the error state gets reset after every measurement update in the ESKF since it's modeled with a white Gaussian distribution. Therefore, the new error state is expressed as:
+The Kalman filter forms the new estimation ($\delta\hat{\mathbf{x}}_{k+N}$) as a composition of the a priori state and the residual $\mathbf{r}_{k+N}=\mathbf{z}_{k+N}-\hat{\mathbf{z}}_{k+N}$:
 \begin{equation}
 \begin{aligned}
-    \delta\hat{\mathbf{x}}_{k+N} &= \mathbf{K}_{g, k+N}\mathbf{r}_{k+N} = \mathbf{K}_{g, k+N}(\mathbf{H}_{x,k+N}\delta\mathbf{x}_{k+N}+\mathbf{H}_{f, k+N}\delta\mathbf{p}_{n}^f + \delta\mathbf{u}_{k+N})
+    \delta\hat{\mathbf{x}}_{k+N} &= \delta\hat{\mathbf{x}}_{k+N}^-+\mathbf{K}_g(\mathbf{z}_{k+N}-\hat{\mathbf{z}}_{k+N}) \\ &=
+    \delta\hat{\mathbf{x}}_{k+N}^-+\mathbf{K}_g(\mathbf{H}_{x,k+N}\delta\tilde{\mathbf{x}}_{k+N}^-+\mathbf{H}_{f, k+N}\delta\tilde{\mathbf{p}}_{n}^f + \delta\mathbf{u}_{k+N}),
 \end{aligned}
 \end{equation}
 
-Now, the error in the a posteriori estimate ($\delta\mathbf{x}_{k+N}^a$) can be expressed as:
+where $\delta\tilde{\mathbf{x}}_{k+N}^-=\delta\mathbf{x}_{k+N}-\delta\hat{\mathbf{x}}_{k+N}^-$ expresses the a priori error in the error state estimation, and $\delta\tilde{\mathbf{p}}_{n}^f=\delta\mathbf{p}_{n}^f-\delta\hat{\mathbf{p}}_{n}^f$. Then the error of the estimation can be expressed:
 \begin{equation}
 \begin{aligned}
-    \delta\mathbf{x}_{k+N}^a &= \delta\mathbf{x}_{k+N}-\delta\hat{\mathbf{x}}_{k+N} \\ &=
-    \delta\mathbf{x}_{k+N} - \mathbf{K}_{g, k+N}(\mathbf{H}_{x,k+N}\delta\mathbf{x}_{k+N}+ \mathbf{H}_{f,k+N}\delta\mathbf{p}_{n}^f + \delta\mathbf{u}_{k+N}) \\ &=
-    \underbrace{\left(\mathbf{I}-\mathbf{K}_{g, k+N}\mathbf{H}_{x,k+N}\right)}_{\mathbf{T}_{x, k+N}}\delta\mathbf{x}_{k+N} - \underbrace{\mathbf{K}_{g, k+N}\mathbf{H}_{f,k+N}}_{\mathbf{T}_{f, k+N}}\delta\mathbf{p}_{n}^f - \mathbf{K}_{g, k+N}\delta\mathbf{u}_{k+N}
+    \delta\tilde{\mathbf{x}}_{k+N} = \delta\mathbf{x}_{k+N}-\delta\hat{\mathbf{x}}_{k+N} =&
+    \mathbf{PF}_x^N\delta\tilde{\mathbf{x}}_{k} + \mathbf{SF}_i^N\mathbf{i} \\ &-\mathbf{K}_g(\mathbf{H}_{x,k+N}\delta \tilde{\mathbf{x}}_{k+N}^- +
+    \mathbf{H}_{f,k+N}\delta \tilde{\mathbf{p}}_{n}^f + \delta\mathbf{u}_{k+N})
+\end{aligned}
+\end{equation}
+    
+Now, substituting~\eqref{eq:true-error-state-prop} and~\eqref{eq:est-error-state-prop} into $\tilde{\mathbf{x}}_{k+N}^-$, then the current error in the a posteriori estimate can be expressed with the previous a posteriori error:
+\begin{equation}
+\begin{aligned}
+    \delta\tilde{\mathbf{x}}_{k+N} = \overbrace{(\mathbf{I}-\mathbf{K}_g\mathbf{H}_{x,k+N})}^{\mathbf{T}_x}\left(\mathbf{PF}_x^N\delta\tilde{\mathbf{x}}_{k}+ \mathbf{SF}_i^N \mathbf{i}\right) -\overbrace{\mathbf{K}_g\mathbf{H}_{f,k+N}}^{\mathbf{T}_f}\delta \tilde{\mathbf{p}}_{n}^f - \mathbf{K}_g\delta\mathbf{u}_{k+N}
 \end{aligned}
 \end{equation}
 
-\subsection{The optimal solution for Kalman gain}
+\subsection{The optimal solution for the Kalman gain}
 
-Before I discuss in detail the optimal solution, let's establish a few mathematical notations. The propagated covariance of the state can be calculated based on~\eqref{eq:err-cov-prop} and is denoted with $E\{\delta\mathbf{x}_{k+N}\delta\mathbf{x}_{k+N}^T\}=\mathbf{P}_{x,k+N}^-$. The feature covariance is denoted with $E\{\delta\mathbf{p}_n^f\delta\mathbf{p}_n^{f^T}\}=\mathbf{P}_f$, and the measurement covariance is still $\mathbf{V}$. 
+Before I discuss in detail the optimal solution, let's establish a few mathematical notations. The propagated covariance of the state can be calculated based on~\eqref{eq:err-cov-prop} and is denoted with $E\{\delta\tilde{\mathbf{x}}_{k+N}^-{\delta\tilde{\mathbf{x}}_{k+N}^-}^T\}=\mathbf{P}_{x,k+N}^-$. The feature covariance is denoted with $E\{\delta \tilde{\mathbf{p}}_{n}^f {\delta\tilde{\mathbf{p}}_{n}^f}^T\}=\mathbf{P}_f$, and the measurement covariance is still $\mathbf{V}$. 
 
-To give an optimal solution for the Kalman gain the a posteriori covariance should be expressed, but first, let's take some considerations. Both the state and the feature position are optimized with the visual measurements furthermore, they are utilized in each other calculations, which leads to a correlation between $\delta\mathbf{x}$ and $\delta\mathbf{p}_{n}^f$. The correlation of their errors can be described with the cross-covariance matrix, which is denoted as $E\{\delta\mathbf{x}_{k+N}\delta\mathbf{p}_n^{f^T}\}=\mathbf{P}_{xf}$. An important property of the cross-covariance matrices are $\mathbf{P}_{xf}=\mathbf{P}_{fx}^T$. 
+To give an optimal solution for the Kalman gain the a posteriori covariance should be expressed, but first, let's take some considerations. Both the state and the feature position are optimized with the visual measurements furthermore, they are utilized in each other calculations, which leads to a correlation between $\delta\mathbf{x}$ and $\delta\mathbf{p}_{n}^f$. The correlation of their errors can be described with the cross-covariance matrix, which is denoted as $E\{\delta\tilde{\mathbf{x}}_{k+N}\delta\tilde{\mathbf{p}}_n^{f^T}\}=\mathbf{P}_{xf,k+N}$. An important property of the cross-covariance matrices is $\mathbf{P}_{xf}=\mathbf{P}_{fx}^T$. 
 
 From now on, I will omit the indexing, because it is clear to which time step the calculations refer. Let's express the a posteriori covariance of the state considering the cross-covariance:
 \begin{equation}
 \begin{aligned}
-    \mathbf{P}_x &=E\{\delta\mathbf{x}^a\delta\mathbf{x}^{a^T}\} \\ &=
+    \mathbf{P}_x &=E\{\delta\tilde{\mathbf{x}}_{k+N}\delta\tilde{\mathbf{x}}_{k+N}^T\} \\ &=
     \begin{aligned}
     \mathbf{T}_x\mathbf{P}_x^-\mathbf{T}_x^T+\mathbf{T}_f\mathbf{P}_f\mathbf{T}_f^T +
     \mathbf{K}_g\mathbf{V}\mathbf{K}_g^T - \mathbf{T}_x\mathbf{P}_{xf}\mathbf{T}_f^T - \mathbf{T}_f\mathbf{P}_{fx}\mathbf{T}_x^T
@@ -80,7 +92,7 @@ Now, the optimal Kalman gain should be calculated, in the sense that it minimize
 \end{aligned}
 \end{equation}
 
-Important to highlight the property $\mathbf{E}=\mathbf{E}^T$ which derives from the positive semi-definite property of the covariance matrices. Finally, the optimal Kalman gain can be determined from the above equation, because $\mathrm{tr}(\mathbf{P}_x)$ is a function of $\mathbf{K}_g$ and $\mathbf{K}_g$ is the only unknown variable, and we request to minimize the trace of the a posteriori covariance with respect to $\mathbf{K}_g$. The partial derivative of the trace is easily given using matrix calculus rules~\cite{matrix-calculus}:
+Important to highlight the property $\mathbf{E}=\mathbf{E}^T$ which derives from the positive semidefinite property of the covariance matrices. Finally, the optimal Kalman gain can be determined from the above equation, because $\mathrm{tr}(\mathbf{P}_x)$ is a function of $\mathbf{K}_g$ and $\mathbf{K}_g$ is the only unknown variable, and we request to minimize the trace of the a posteriori covariance with respect to $\mathbf{K}_g$. The partial derivative of the trace is easily given using matrix calculus rules~\cite{matrix-calculus}:
 \begin{equation}
     \frac{\partial \mathrm{tr}(\mathbf{P}_{x})}{\partial\mathbf{K}_g} = -\mathbf{E}^T-\mathbf{E}+2\mathbf{K}_g\mathbf{D} = 0
 \end{equation}
@@ -93,12 +105,12 @@ Rearranging the terms for $\mathbf{K}_g$ the optimal solution is given as:
 
 \section{Cross-covariance estimation}
 
-The method for cross-covariance modeling is utilized from~\cite{oliver2003gaussian}, called Gaussian cosimulation. This method foundation is that a p-dimensional vector $\mathbf{y}$ is multivariate normal with rank m, mean $\boldsymbol{\mu}$ and covariance $\mathbf{P}$, then:
+The method for cross-covariance modeling is utilized from~\cite{oliver2003gaussian}, called Gaussian cosimulation. This method foundation is that a p-dimensional vector $\mathbf{y}$ is multivariate normal with rank m, mean $\boldsymbol{\mu}$, and covariance $\mathbf{P}$, then:
 \begin{equation}
     \mathbf{y}=\boldsymbol{\mu} + \mathbf{L}\mathbf{z}, \quad \mathbf{P}=\mathbf{L}\mathbf{L}^T,
 \end{equation}
 
-where $\mathbf{L}\in\mathbb{R}^{p\times m}$ matrix of rank m and $\mathbf{z}$ is a vector with m independent identically distributed standard normal variable~\cite{rao}. Both~\cite{Alabert1987, Davis1987} propose the usage of the LU decomposition for conditional simulations, which results in simulating Gaussian random fields. In my work, I employ a similar approach by calculating the square root decomposition of covariance matrices to efficiently create cross-covariance models.
+where $\mathbf{L}\in\mathbb{R}^{p\times m}$ matrix of rank m and $\mathbf{z}$ is a vector with m independent identically distributed standard normal variable~\cite{rao}. Both~\cite{Alabert1987, Davis1987} propose the usage of the Lower-Upper (LU) decomposition for conditional simulations, which results in simulating Gaussian random fields. In my work, I employ a similar approach by calculating the square root decomposition of covariance matrices to efficiently create cross-covariance models.
 
 The method introduces two correlated random Gaussian vectors $\mathbf{y}_1$ and $\mathbf{y}_2$ with $\rho$ correlation factor:
 \begin{equation}
@@ -117,13 +129,13 @@ The covariance matrices of the vectors are $E\{(\mathbf{y}_1-\boldsymbol{\mu}_1)
 \end{aligned}
 \end{equation}
 
-Now, $\rho\in[0;1]$ is a tuneable parameter that determines the strength of the correlation between Gaussian distributed vectors, but $\mathbf{L}_1$ and $\mathbf{L}_2$ should be determined as the square root of the covariance matrices. It can be always done because covariance matrices are positive semi-definite. The decomposition procedure is the same as in~\eqref{eq:decomposed-linsys} where the LOST equations were square root decomposed.
+Now, $\rho\in[0;1]$ is a tuneable parameter that determines the strength of the correlation between Gaussian distributed vectors, but $\mathbf{L}_1$ and $\mathbf{L}_2$ should be determined as the square root of the covariance matrices. It can be always done because covariance matrices are positive semidefinite. The decomposition procedure is the same as in~\eqref{eq:decomposed-linsys} where the LOST equations were square root decomposed.
 
 The state and the feature covariances are defined as Gaussian fields with different dimensions, therefore the covariance decomposition is applied to covariances existing in the pixel space. The covariance matrices are projected into the pixel space with their measurement matrices $\mathbf{H}_x$ and $\mathbf{H}_f$ for the state and the feature position respectively. Applying the eigenvalue decomposition on the projected covariance matrices yields:
 \begin{equation}
 \begin{aligned}
-    & \mathbf{H}_x\mathbf{P}_x\mathbf{H}_x^T=\overbrace{\left(\mathbf{V}_x\sqrt{\mathbf{D}_x}\right)}^{\mathbf{L}_x}\left(\mathbf{V}_x\sqrt{\mathbf{D}_x}\right)^T \\
-    & \mathbf{H}_f\mathbf{P}_f\mathbf{H}_f^T=\underbrace{\left(\mathbf{V}_f\sqrt{\mathbf{D}_f}\right)}_{\mathbf{L}_f}\left(\mathbf{V}_f\sqrt{\mathbf{D}_f}\right)^T \\
+    & \mathbf{H}_x\mathbf{P}_x\mathbf{H}_x^T=\overbrace{\left(\mathbf{V}_x\sqrt{\mathbf{D}_x}\right)}^{\mathbf{L}_x}{\left(\mathbf{V}_x\sqrt{\mathbf{D}_x}\right)}^T \\
+    & \mathbf{H}_f\mathbf{P}_f\mathbf{H}_f^T=\underbrace{\left(\mathbf{V}_f\sqrt{\mathbf{D}_f}\right)}_{\mathbf{L}_f}{\left(\mathbf{V}_f\sqrt{\mathbf{D}_f}\right)}^T \\
 \end{aligned}
 \end{equation}
 
